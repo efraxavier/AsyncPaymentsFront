@@ -1,8 +1,9 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="purple_500">#6200EE</color>
-    <color name="purple_700">#3700B3</color>
-    <color name="teal_200">#03DAC5</color>
+    <color name="orange_primary">#FF9800</color>
+    <color name="orange_dark">#F57C00</color>
+    <color name="orange_light">#FFE0B2</color>
+    <color name="tech_gray">#23272A</color>
+    <color name="tech_black">#181A1B</color>
     <color name="white">#FFFFFF</color>
-    <color name="black">#000000</color>
+    <color name="hex_border">#FFA726</color>
 </resources>

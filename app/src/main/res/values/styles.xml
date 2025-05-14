@@ -1,8 +1,12 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="CustomButtonStyle">
-        <item name="android:background">@color/purple_500</item>
+    <style name="OrangeButton">
+        <item name="android:backgroundTint">@color/orange_primary</item>
         <item name="android:textColor">@color/white</item>
-        <item name="android:padding">12dp</item>
+        <item name="android:elevation">4dp</item>
+    </style>
+    <style name="OrangeEditText">
+        <item name="android:background">@drawable/edittext_hex_border</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textColorHint">@color/orange_light</item>
     </style>
 </resources>
