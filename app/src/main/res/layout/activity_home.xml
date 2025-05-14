@@ -1,0 +1,33 @@
+<androidx.constraintlayout.widget.ConstraintLayout android:layout_width="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:padding="16dp"
+    android:layout_height="16dp"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <TextView
+        android:id="@+id/tvBalance"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Saldo Disponível: R$ 1.250,00"
+        android:textSize="18sp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <Button
+        android:id="@+id/btnSyncAccount"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Conta Síncrona"
+        app:layout_constraintTop_toBottomOf="@id/tvBalance"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <Button
+        android:id="@+id/btnAsyncAccount"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Conta Assíncrona"
+        app:layout_constraintTop_toBottomOf="@id/btnSyncAccount"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+</androidx.constraintlayout.widget.ConstraintLayout>

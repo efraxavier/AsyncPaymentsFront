@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <EditText
+            android:id="@+id/etIdUsuarioOrigem"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hint="ID Usuário Origem"
+            android:inputType="number"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="32dp"
+            android:layout_marginStart="32dp"
+            android:layout_marginEnd="32dp"/>
+
+        <EditText
+            android:id="@+id/etIdUsuarioDestino"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hint="ID Usuário Destino"
+            android:inputType="number"
+            app:layout_constraintTop_toBottomOf="@id/etIdUsuarioOrigem"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="16dp"
+            android:layout_marginStart="32dp"
+            android:layout_marginEnd="32dp"/>
+
+        <EditText
+            android:id="@+id/etAmount"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hint="Valor"
+            android:inputType="numberDecimal"
+            app:layout_constraintTop_toBottomOf="@id/etIdUsuarioDestino"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="16dp"
+            android:layout_marginStart="32dp"
+            android:layout_marginEnd="32dp"/>
+
+        <EditText
+            android:id="@+id/etMetodoConexao"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hint="Método de Conexão"
+            android:inputType="text"
+            app:layout_constraintTop_toBottomOf="@id/etAmount"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="16dp"
+            android:layout_marginStart="32dp"
+            android:layout_marginEnd="32dp"/>
+
+        <EditText
+            android:id="@+id/etGatewayPagamento"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hint="Gateway de Pagamento"
+            android:inputType="text"
+            app:layout_constraintTop_toBottomOf="@id/etMetodoConexao"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="16dp"
+            android:layout_marginStart="32dp"
+            android:layout_marginEnd="32dp"/>
+
+        <Button
+            android:id="@+id/btnSendTransaction"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Enviar Transação"
+            app:layout_constraintTop_toBottomOf="@id/etGatewayPagamento"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="24dp"
+            android:layout_marginStart="32dp"
+            android:layout_marginEnd="32dp"/>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>
