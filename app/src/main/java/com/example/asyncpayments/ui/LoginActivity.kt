@@ -46,7 +46,7 @@ class LoginActivity : AppCompatActivity() {
                 val response = authService.login(authRequest)
                 SharedPreferencesHelper(this@LoginActivity).saveToken(response.token)
                 Toast.makeText(this@LoginActivity, "Login realizado com sucesso!", Toast.LENGTH_SHORT).show()
-                startActivity(Intent(this@LoginActivity, TransactionActivity::class.java))
+                startActivity(Intent(this@LoginActivity, HomeActivity::class.java))
                 finish()
             } catch (e: Exception) {
                 Toast.makeText(this@LoginActivity, "Erro no login: ${e.message}", Toast.LENGTH_SHORT).show()

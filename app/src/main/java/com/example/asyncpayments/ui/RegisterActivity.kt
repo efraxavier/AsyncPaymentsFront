@@ -35,19 +35,19 @@ class RegisterActivity : AppCompatActivity() {
     }
 
     private fun register(email: String, password: String) {
-    val retrofit = RetrofitClient.getInstance(this)
-    val authService = retrofit.create(AuthService::class.java)
-    val registerRequest = RegisterRequest(email, password) // Remova o campo name
+        val retrofit = RetrofitClient.getInstance(this)
+        val authService = retrofit.create(AuthService::class.java)
+        val registerRequest = RegisterRequest(email, password)
 
-    lifecycleScope.launch {
-        try {
-            authService.register(registerRequest)
-            Toast.makeText(this@RegisterActivity, "Cadastro realizado com sucesso!", Toast.LENGTH_SHORT).show()
-            startActivity(Intent(this@RegisterActivity, LoginActivity::class.java))
-            finish()
-        } catch (e: Exception) {
-            Toast.makeText(this@RegisterActivity, "Erro ao cadastrar: ${e.message}", Toast.LENGTH_SHORT).show()
+        lifecycleScope.launch {
+            try {
+                authService.register(registerRequest)
+                Toast.makeText(this@RegisterActivity, "Cadastro realizado com sucesso!", Toast.LENGTH_SHORT).show()
+                startActivity(Intent(this@RegisterActivity, LoginActivity::class.java))
+                finish()
+            } catch (e: Exception) {
+                Toast.makeText(this@RegisterActivity, "Erro ao cadastrar: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
         }
     }
-}
 }
