@@ -1,11 +1,10 @@
 package com.example.asyncpayments.network
 
+import okhttp3.ResponseBody
 import retrofit2.http.POST
 import retrofit2.http.Path
 
-data class SyncResponse(val message: String)
-
 interface SyncService {
-    @POST("sincronizacao/manual/{idUsuario}")
-    suspend fun sincronizarManual(@Path("idUsuario") idUsuario: Long): SyncResponse
+    @POST("sincronizacao/manual/{id}")
+    suspend fun sincronizarManual(@Path("id") id: Long): ResponseBody
 }

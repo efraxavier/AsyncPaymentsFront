@@ -15,18 +15,17 @@ class SMSSender(private val context: Context) {
                 Manifest.permission.SEND_SMS
             ) != PackageManager.PERMISSION_GRANTED
         ) {
-            // Permission not granted, handle this case (e.g., show a message to the user)
             Log.e("SMSSender", "SMS permission not granted")
             return
         }
 
         try {
             val smsManager = SmsManager.getDefault()
-            val message = "Payment Data: Amount=${data.amount}, Sender=${data.sender}, Receiver=${data.receiver}"
+            // Serialização simples para texto (ajuste conforme necessário)
+            val message = "PAYMENTDATA;id=${data.id};valor=${data.valor};origem=${data.origem};destino=${data.destino};data=${data.data}"
             smsManager.sendTextMessage(phoneNumber, null, message, null, null)
             Log.d("SMSSender", "SMS sent successfully")
         } catch (e: SecurityException) {
-            // Handle SecurityException here (permission denied, etc.)
             Log.e("SMSSender", "SecurityException sending SMS: ${e.message}")
         } catch (e: Exception){
             Log.e("SMSSender", "Generic exception sending SMS: ${e.message}")

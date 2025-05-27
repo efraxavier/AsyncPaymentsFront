@@ -9,10 +9,10 @@
 
         <TextView
             android:id="@+id/tvTransactionTitle"
+            style="@style/OrangeText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Nova Transação"
-            android:textColor="@color/orange_primary"
             android:textSize="22sp"
             android:textStyle="bold"
             app:layout_constraintTop_toTopOf="parent"
@@ -21,84 +21,85 @@
             android:layout_marginTop="32dp"/>
 
         <EditText
-            android:id="@+id/etIdUsuarioOrigem"
-            style="@style/OrangeEditText"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:hint="ID Usuário Origem"
-            app:layout_constraintTop_toBottomOf="@id/tvTransactionTitle"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginTop="24dp"
-            android:layout_marginStart="32dp"
-            android:layout_marginEnd="32dp"/>
+    android:id="@+id/etIdUsuarioOrigem"
+    style="@style/OrangeEditText"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:hint="ID Usuário Origem"
+    app:layout_constraintTop_toBottomOf="@id/tvTransactionTitle"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintEnd_toEndOf="parent"
+    android:layout_marginTop="24dp"
+    android:layout_marginStart="32dp"
+    android:layout_marginEnd="32dp"/>
 
-        <EditText
-            android:id="@+id/etIdUsuarioDestino"
-            style="@style/OrangeEditText"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:hint="ID Usuário Destino"
-            app:layout_constraintTop_toBottomOf="@id/etIdUsuarioOrigem"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginTop="12dp"
-            android:layout_marginStart="32dp"
-            android:layout_marginEnd="32dp"/>
+<AutoCompleteTextView
+    android:id="@+id/etIdUsuarioDestino"
+    style="@style/OrangeEditText"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:hint="ID Usuário Destino"
+    app:layout_constraintTop_toBottomOf="@id/etIdUsuarioOrigem"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintEnd_toEndOf="parent"
+    android:layout_marginTop="12dp"
+    android:layout_marginStart="32dp"
+    android:layout_marginEnd="32dp"/>
 
-        <EditText
-            android:id="@+id/etAmount"
-            style="@style/OrangeEditText"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:hint="Valor"
-            android:inputType="numberDecimal"
-            app:layout_constraintTop_toBottomOf="@id/etIdUsuarioDestino"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginTop="12dp"
-            android:layout_marginStart="32dp"
-            android:layout_marginEnd="32dp"/>
+<EditText
+    android:id="@+id/etAmount"
+    style="@style/OrangeEditText"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:hint="Valor"
+    android:inputType="numberDecimal"
+    app:layout_constraintTop_toBottomOf="@id/etIdUsuarioDestino"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintEnd_toEndOf="parent"
+    android:layout_marginTop="12dp"
+    android:layout_marginStart="32dp"
+    android:layout_marginEnd="32dp"/>
 
-        <EditText
-            android:id="@+id/etMetodoConexao"
-            style="@style/OrangeEditText"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:hint="Método de Conexão"
-            app:layout_constraintTop_toBottomOf="@id/etAmount"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginTop="12dp"
-            android:layout_marginStart="32dp"
-            android:layout_marginEnd="32dp"/>
+<AutoCompleteTextView
+    android:id="@+id/actvMetodoConexao"
+    style="@style/OrangeEditText"
+    android:inputType="none"
+    android:focusable="false"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:hint="Método de Conexão"
+    app:layout_constraintTop_toBottomOf="@id/etAmount"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintEnd_toEndOf="parent"
+    android:layout_marginTop="12dp"
+    android:layout_marginStart="32dp"
+    android:layout_marginEnd="32dp"/>
 
-        <EditText
-            android:id="@+id/etGatewayPagamento"
-            style="@style/OrangeEditText"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:hint="Gateway de Pagamento"
-            app:layout_constraintTop_toBottomOf="@id/etMetodoConexao"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginTop="12dp"
-            android:layout_marginStart="32dp"
-            android:layout_marginEnd="32dp"/>
+<AutoCompleteTextView
+    android:id="@+id/actvGatewayPagamento"
+    style="@style/OrangeEditText"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:hint="Gateway de Pagamento"
+    app:layout_constraintTop_toBottomOf="@id/actvMetodoConexao"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintEnd_toEndOf="parent"
+    android:layout_marginTop="12dp"
+    android:layout_marginStart="32dp"
+    android:layout_marginEnd="32dp"/>
 
-        <Button
-            android:id="@+id/btnSendTransaction"
-            style="@style/OrangeButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:text="Enviar Transação"
-            app:layout_constraintTop_toBottomOf="@id/etGatewayPagamento"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginTop="24dp"
-            android:layout_marginStart="32dp"
-            android:layout_marginEnd="32dp"/>
-
+<Button
+    android:id="@+id/btnSendTransaction"
+    style="@style/OrangeButton"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:text="Enviar Transação"
+    app:layout_constraintTop_toBottomOf="@id/actvGatewayPagamento"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintEnd_toEndOf="parent"
+    android:layout_marginTop="24dp"
+    android:layout_marginStart="32dp"
+    android:layout_marginEnd="32dp"/>
         <com.google.android.material.bottomnavigation.BottomNavigationView
             android:id="@+id/bottomNav"
             android:layout_width="0dp"

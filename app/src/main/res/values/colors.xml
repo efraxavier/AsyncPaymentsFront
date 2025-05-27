@@ -8,4 +8,6 @@
     <color name="red_accent">#FF5252</color>
     <color name="white">#FFFFFF</color>
     <color name="hex_border">#FFA726</color>
+    <color name="dark_gray">#222222</color>   
+    <color name="green_active">#388E3C</color>  
 </resources>

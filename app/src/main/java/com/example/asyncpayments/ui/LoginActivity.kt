@@ -2,10 +2,12 @@ package com.example.asyncpayments.ui
 
 import android.content.Intent
 import android.os.Bundle
-import android.widget.Toast
+import android.view.LayoutInflater
+import android.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.asyncpayments.databinding.ActivityLoginBinding
+import com.example.asyncpayments.databinding.DialogResponseBinding
 import com.example.asyncpayments.model.AuthRequest
 import com.example.asyncpayments.network.AuthService
 import com.example.asyncpayments.network.RetrofitClient
@@ -15,6 +17,7 @@ import kotlinx.coroutines.launch
 class LoginActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityLoginBinding
+    private var alertDialog: AlertDialog? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,7 +30,7 @@ class LoginActivity : AppCompatActivity() {
             if (email.isNotEmpty() && password.isNotEmpty()) {
                 login(email, password)
             } else {
-                Toast.makeText(this, "Preencha todos os campos", Toast.LENGTH_SHORT).show()
+                showCustomDialog("Atenção", "Preencha todos os campos")
             }
         }
 
@@ -45,12 +48,29 @@ class LoginActivity : AppCompatActivity() {
             try {
                 val response = authService.login(authRequest)
                 SharedPreferencesHelper(this@LoginActivity).saveToken(response.token)
-                Toast.makeText(this@LoginActivity, "Login realizado com sucesso!", Toast.LENGTH_SHORT).show()
+                showCustomDialog("Login realizado", "Login realizado com sucesso!")
                 startActivity(Intent(this@LoginActivity, HomeActivity::class.java))
                 finish()
             } catch (e: Exception) {
-                Toast.makeText(this@LoginActivity, "Erro no login: ${e.message}", Toast.LENGTH_SHORT).show()
+                showCustomDialog("Erro", "Erro no login: ${e.message}")
             }
         }
+    }
+
+    private fun showCustomDialog(title: String, message: String) {
+        if (isFinishing || isDestroyed) return
+        val dialogBinding = DialogResponseBinding.inflate(layoutInflater)
+        dialogBinding.tvDialogTitle.text = title
+        dialogBinding.tvDialogMessage.text = message
+        alertDialog = AlertDialog.Builder(this)
+            .setView(dialogBinding.root)
+            .setCancelable(true)
+            .create()
+        alertDialog?.show()
+    }
+
+    override fun onDestroy() {
+        alertDialog?.dismiss()
+        super.onDestroy()
     }
 }

@@ -1,17 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
+
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@drawable/bg_hex_pattern">
 
-        <EditText
-            android:id="@+id/etEmail"
+        <TextView
+            android:id="@+id/tvRegisterPrompt"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:hint="E-mail"
-            android:inputType="textEmailAddress"
+            android:text="Insira seu e-mail"
+            android:textColor="@color/orange_primary"
+            android:textSize="18sp"
+            android:textStyle="bold"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
@@ -19,25 +22,34 @@
             android:layout_marginStart="32dp"
             android:layout_marginEnd="32dp"/>
 
-        <EditText
-            android:id="@+id/etPassword"
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilRegisterInput"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:hint="Senha"
-            android:inputType="textPassword"
-            app:layout_constraintTop_toBottomOf="@id/etEmail"
+            app:layout_constraintTop_toBottomOf="@id/tvRegisterPrompt"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="24dp"
             android:layout_marginStart="32dp"
-            android:layout_marginEnd="32dp"/>
+            android:layout_marginEnd="32dp">
 
-        <Button
-            android:id="@+id/btnCreateAccount"
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etRegisterInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint=""
+                style="@style/OrangeEditText"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <AutoCompleteTextView
+            android:id="@+id/actvFormaPagamento"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Criar Conta"
-            app:layout_constraintTop_toBottomOf="@id/etPassword"
+            android:hint="Forma de Pagamento"
+            style="@style/OrangeEditText"
+            android:visibility="gone"
+            app:layout_constraintTop_toBottomOf="@id/tvRegisterPrompt"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginTop="24dp"
@@ -45,15 +57,17 @@
             android:layout_marginEnd="32dp"/>
 
         <Button
-            android:id="@+id/btnBack"
+            android:id="@+id/btnNext"
+            style="@style/OrangeButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Voltar"
-            app:layout_constraintTop_toBottomOf="@id/btnCreateAccount"
+            android:text="Próximo"
+            app:layout_constraintTop_toBottomOf="@id/tilRegisterInput"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="32dp"
             android:layout_marginStart="32dp"
             android:layout_marginEnd="32dp"/>
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

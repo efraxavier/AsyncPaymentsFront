@@ -21,7 +21,6 @@ class BluetoothSender(private val context: Context) {
                 Manifest.permission.BLUETOOTH_CONNECT
             ) != PackageManager.PERMISSION_GRANTED
         ) {
-            // Permission not granted, handle this case (e.g., show a message to the user)
             Log.e("BluetoothSender", "Bluetooth connect permission not granted")
             return
         }
@@ -29,16 +28,14 @@ class BluetoothSender(private val context: Context) {
         try {
             socket = device.createRfcommSocketToServiceRecord(appUuid)
             socket.connect()
-
             val outputStream = ObjectOutputStream(socket.outputStream)
             outputStream.writeObject(data)
             outputStream.flush()
-            Log.d("BluetoothSender", "Data sent successfully via Bluetooth")
+            Log.d("BluetoothSender", "PaymentData sent successfully via Bluetooth")
         } catch (e: SecurityException) {
-            // Handle SecurityException here (permission denied, etc.)
             Log.e("BluetoothSender", "SecurityException sending Bluetooth: ${e.message}")
-        }catch (e: IOException) {
-            Log.e("BluetoothSender", "Error sending data via Bluetooth: ${e.message}")
+        } catch (e: IOException) {
+            Log.e("BluetoothSender", "Error sending PaymentData via Bluetooth: ${e.message}")
         } finally {
             try {
                 socket?.close()

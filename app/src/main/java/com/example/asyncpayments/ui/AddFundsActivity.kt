@@ -2,10 +2,12 @@ package com.example.asyncpayments.ui
 
 import android.content.Intent
 import android.os.Bundle
-import android.widget.Toast
+import android.view.LayoutInflater
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.asyncpayments.databinding.ActivityAddFundsBinding
+import com.example.asyncpayments.databinding.DialogResponseBinding
 import com.example.asyncpayments.network.RetrofitClient
 import com.example.asyncpayments.network.TransactionService
 import com.example.asyncpayments.utils.SharedPreferencesHelper
@@ -27,7 +29,7 @@ class AddFundsActivity : AppCompatActivity() {
             if (valor != null && userId != null) {
                 addFunds(userId, valor)
             } else {
-                Toast.makeText(this, "Preencha o valor corretamente", Toast.LENGTH_SHORT).show()
+                showCustomDialog("Atenção", "Preencha o valor corretamente")
             }
         }
 
@@ -64,9 +66,10 @@ class AddFundsActivity : AppCompatActivity() {
                     valor = valor,
                     body = mapOf("valor" to valor)
                 )
-                Toast.makeText(this@AddFundsActivity, apiResponse.toString(), Toast.LENGTH_LONG).show()
+                showCustomDialog("Fundos adicionados", "Valor: R$ %.2f\nStatus: %s"
+                    .format(apiResponse.valor, if (apiResponse.sincronizada) "Sincronizada" else "Pendente"))
             } catch (e: Exception) {
-                Toast.makeText(this@AddFundsActivity, "Erro ao adicionar fundos: ${e.message}", Toast.LENGTH_LONG).show()
+                showCustomDialog("Erro", "Erro ao adicionar fundos: ${e.message}")
             }
         }
     }
@@ -80,5 +83,16 @@ class AddFundsActivity : AppCompatActivity() {
         } catch (e: Exception) {
             null
         }
+    }
+
+    private fun showCustomDialog(title: String, message: String) {
+        val dialogBinding = DialogResponseBinding.inflate(LayoutInflater.from(this))
+        dialogBinding.tvDialogTitle.text = title
+        dialogBinding.tvDialogMessage.text = message
+        AlertDialog.Builder(this)
+            .setView(dialogBinding.root)
+            .setCancelable(true)
+            .create()
+            .show()
     }
 }

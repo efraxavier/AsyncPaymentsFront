@@ -4,6 +4,11 @@ data class UserResponse(
     val id: Long,
     val email: String,
     val role: String,
+    val nome: String,
+    val sobrenome: String,
+    val cpf: String,
+    val celular: String,
+    val formaPagamentoAlternativa: String,
     val contaSincrona: ContaSincrona,
     val contaAssincrona: ContaAssincrona
 )

@@ -1,3 +1,4 @@
-<shape xmlns:android="http://schemas.android.com/apk/res/android">
-    <solid android:color="@color/tech_gray"/>
-</shape>
+<bitmap xmlns:android="http://schemas.android.com/apk/res/android"
+    android:src="@drawable/bubbler"
+    android:tileMode="repeat"
+    android:alpha="0.15" />

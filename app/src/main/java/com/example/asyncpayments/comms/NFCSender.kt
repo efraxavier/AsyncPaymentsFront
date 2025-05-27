@@ -41,7 +41,7 @@ class NFCSender(private val activity: Activity) {
         objectOutputStream.flush()
         val payload = outputStream.toByteArray()
 
-        val mimeType = "application/vnd.com.yourpackage.payment" // Replace with your MIME type
+        val mimeType = "application/vnd.com.example.asyncpayments.paymentdata"
         val mimeRecord = NdefRecord.createMime(mimeType, payload)
 
         return NdefMessage(mimeRecord)
@@ -53,15 +53,15 @@ class NFCSender(private val activity: Activity) {
             if (ndef != null) {
                 ndef.connect()
                 if (ndef.maxSize < ndefMessage.toByteArray().size) {
-                    //Tag too small
+                    // Tag too small
                 } else {
                     ndef.writeNdefMessage(ndefMessage)
-                    //Success
+                    // Success
                 }
                 ndef.close()
             }
         } catch (e: Exception) {
-            Log.e("NfcTagWriter", "Error writing tag", e)
+            Log.e("NFCSender", "Error writing tag", e)
         }
     }
 }
