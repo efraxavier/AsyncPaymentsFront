@@ -1,16 +1,14 @@
 package com.example.asyncpayments.ui
-
+import com.example.asyncpayments.model.TransactionRequest
 import android.content.Intent
 import android.os.Bundle
-import android.view.LayoutInflater
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.asyncpayments.databinding.ActivityAddFundsBinding
-import com.example.asyncpayments.databinding.DialogResponseBinding
 import com.example.asyncpayments.network.RetrofitClient
 import com.example.asyncpayments.network.TransactionService
 import com.example.asyncpayments.utils.SharedPreferencesHelper
+import com.example.asyncpayments.utils.ShowNotification
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import android.util.Base64
@@ -29,7 +27,12 @@ class AddFundsActivity : AppCompatActivity() {
             if (valor != null && userId != null) {
                 addFunds(userId, valor)
             } else {
-                showCustomDialog("Atenção", "Preencha o valor corretamente")
+                ShowNotification.show(
+                    this,
+                    ShowNotification.Type.GENERIC,
+                    0.0,
+                    "Preencha o valor corretamente"
+                )
             }
         }
 
@@ -57,19 +60,35 @@ class AddFundsActivity : AppCompatActivity() {
     }
 
     private fun addFunds(userId: Long, valor: Double) {
+        val descricao = "" 
         val service = RetrofitClient.getInstance(this).create(TransactionService::class.java)
         lifecycleScope.launch {
             try {
-                val apiResponse = service.addFundsAsync(
-                    userId = userId,
+                val request = TransactionRequest(
+                    idUsuarioOrigem = userId,
                     idUsuarioDestino = userId,
                     valor = valor,
-                    body = mapOf("valor" to valor)
+                    metodoConexao = "ASYNC",
+                    gatewayPagamento = "INTERNO",
+                    descricao = descricao
                 )
-                showCustomDialog("Fundos adicionados", "Valor: R$ %.2f\nStatus: %s"
-                    .format(apiResponse.valor, if (apiResponse.sincronizada) "Sincronizada" else "Pendente"))
+                val apiResponse = service.sendTransaction(request)
+                val mensagem = "Método: ${apiResponse.metodoConexao}\n" +
+                               "Enviado para ID: ${apiResponse.idUsuarioDestino}\n" +
+                               "Valor: R$ %.2f".format(apiResponse.valor)
+                ShowNotification.show(
+                    this@AddFundsActivity,
+                    ShowNotification.Type.TRANSACTION_SENT,
+                    apiResponse.valor,
+                    mensagem
+                )
             } catch (e: Exception) {
-                showCustomDialog("Erro", "Erro ao adicionar fundos: ${e.message}")
+                ShowNotification.show(
+                    this@AddFundsActivity,
+                    ShowNotification.Type.GENERIC,
+                    valor,
+                    "Erro ao adicionar fundos: ${e.message}"
+                )
             }
         }
     }
@@ -83,16 +102,5 @@ class AddFundsActivity : AppCompatActivity() {
         } catch (e: Exception) {
             null
         }
-    }
-
-    private fun showCustomDialog(title: String, message: String) {
-        val dialogBinding = DialogResponseBinding.inflate(LayoutInflater.from(this))
-        dialogBinding.tvDialogTitle.text = title
-        dialogBinding.tvDialogMessage.text = message
-        AlertDialog.Builder(this)
-            .setView(dialogBinding.root)
-            .setCancelable(true)
-            .create()
-            .show()
     }
 }

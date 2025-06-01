@@ -7,8 +7,10 @@ import android.os.Bundle
 import android.telephony.SmsMessage
 import android.util.Log
 import com.example.asyncpayments.model.PaymentData
+import com.example.asyncpayments.utils.OfflineTransactionQueue
+import com.example.asyncpayments.utils.ShowNotification
 
-class SMSReceiver(private val onPaymentDataReceived: (PaymentData) -> Unit) : BroadcastReceiver() {
+class SMSReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val bundle: Bundle? = intent.extras
         try {
@@ -24,13 +26,27 @@ class SMSReceiver(private val onPaymentDataReceived: (PaymentData) -> Unit) : Br
                             if (parts.size == 2) parts[0] to parts[1] else null
                         }.toMap()
                         val paymentData = PaymentData(
-                            id = map["id"]?.toLongOrNull() ?: 0L,
+                            id = System.currentTimeMillis(),
                             valor = map["valor"]?.toDoubleOrNull() ?: 0.0,
-                            origem = map["origem"] ?: "",
-                            destino = map["destino"] ?: "",
-                            data = map["data"] ?: ""
+                            origem = map["emailOrigem"] ?: "",
+                            destino = map["emailDestino"] ?: "",
+                            data = System.currentTimeMillis().toString(),
+                            metodoConexao = map["metodoConexao"] ?: "INTERNET",
+                            gatewayPagamento = map["gatewayPagamento"] ?: "INTERNO",
+                            descricao = map["descricao"] ?: "" 
                         )
-                        onPaymentDataReceived(paymentData)
+                        OfflineTransactionQueue.save(context, paymentData)
+
+                        
+                        ShowNotification.show(
+                            context,
+                            ShowNotification.Type.TRANSACTION_RECEIVED,
+                            paymentData.valor,
+                            paymentData.origem 
+                        )
+
+                        
+                        Log.d("SMSReceiver", "Pagamento recebido: ${paymentData.valor} de ${paymentData.origem}")
                     }
                 }
             }

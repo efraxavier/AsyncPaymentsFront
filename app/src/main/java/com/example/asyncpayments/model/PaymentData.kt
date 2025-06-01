@@ -7,5 +7,8 @@ data class PaymentData(
     val valor: Double,
     val origem: String,
     val destino: String,
-    val data: String
+    val data: String,
+    val metodoConexao: String,
+    val gatewayPagamento: String,
+    val descricao: String? = null
 ) : Serializable

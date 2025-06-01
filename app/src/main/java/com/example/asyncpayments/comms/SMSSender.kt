@@ -21,7 +21,7 @@ class SMSSender(private val context: Context) {
 
         try {
             val smsManager = SmsManager.getDefault()
-            // Serialização simples para texto (ajuste conforme necessário)
+            
             val message = "PAYMENTDATA;id=${data.id};valor=${data.valor};origem=${data.origem};destino=${data.destino};data=${data.data}"
             smsManager.sendTextMessage(phoneNumber, null, message, null, null)
             Log.d("SMSSender", "SMS sent successfully")

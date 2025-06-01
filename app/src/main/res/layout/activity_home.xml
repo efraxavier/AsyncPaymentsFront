@@ -171,16 +171,12 @@
 
         <Button
             android:id="@+id/btnSyncAccounts"
-            style="@style/OrangeButton"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Sincronizar Contas"
-            app:layout_constraintTop_toBottomOf="@id/tvFakeInfo"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginTop="24dp"
-            android:layout_marginStart="32dp"
-            android:layout_marginEnd="32dp"/>
+            android:text="Sincronizar contas"
+            android:layout_marginTop="16dp"
+            android:backgroundTint="@color/yellow_accent"
+            android:textColor="@color/tech_black"/>
 
         <include
             layout="@layout/include_bottom_nav"

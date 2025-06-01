@@ -1,16 +1,21 @@
 package com.example.asyncpayments.network
 
 import com.example.asyncpayments.model.UserResponse
-import retrofit2.http.GET
-import retrofit2.http.Path
+import retrofit2.http.*
 
 interface UserService {
-    @GET("usuarios/listar")
+    @GET("usuarios")
     suspend fun listarUsuarios(): List<UserResponse>
- 
+
     @GET("usuarios/me")
     suspend fun getMe(): UserResponse
 
     @GET("usuarios/{id}")
     suspend fun getById(@Path("id") id: Long): UserResponse
+
+    @PUT("usuarios/{id}")
+    suspend fun atualizarUsuario(@Path("id") id: Long, @Body user: UserResponse): UserResponse
+
+    @DELETE("usuarios/{id}")
+    suspend fun deletarUsuario(@Path("id") id: Long)
 }

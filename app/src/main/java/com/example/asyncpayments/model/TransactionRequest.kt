@@ -5,5 +5,6 @@ data class TransactionRequest(
     val idUsuarioDestino: Long,
     val valor: Double,
     val metodoConexao: String,
-    val gatewayPagamento: String
+    val gatewayPagamento: String,
+    val descricao: String? = null 
 )

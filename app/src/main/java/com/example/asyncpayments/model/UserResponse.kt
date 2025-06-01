@@ -8,9 +8,8 @@ data class UserResponse(
     val sobrenome: String,
     val cpf: String,
     val celular: String,
-    val formaPagamentoAlternativa: String,
-    val contaSincrona: ContaSincrona,
-    val contaAssincrona: ContaAssincrona
+    val contaSincrona: ContaSincrona?,
+    val contaAssincrona: ContaAssincrona?
 )
 
 data class ContaSincrona(

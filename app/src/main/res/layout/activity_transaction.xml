@@ -88,13 +88,27 @@
     android:layout_marginStart="32dp"
     android:layout_marginEnd="32dp"/>
 
+<EditText
+    android:id="@+id/etDescricao"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:hint="Descrição (opcional, até 140 caracteres)"
+    android:maxLength="140"
+    android:inputType="textCapSentences|textMultiLine"
+    app:layout_constraintTop_toBottomOf="@id/actvGatewayPagamento"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintEnd_toEndOf="parent"
+    android:layout_marginTop="12dp"
+    android:layout_marginStart="32dp"
+    android:layout_marginEnd="32dp"/>
+
 <Button
     android:id="@+id/btnSendTransaction"
     style="@style/OrangeButton"
     android:layout_width="0dp"
     android:layout_height="wrap_content"
     android:text="Enviar Transação"
-    app:layout_constraintTop_toBottomOf="@id/actvGatewayPagamento"
+    app:layout_constraintTop_toBottomOf="@id/etDescricao"
     app:layout_constraintStart_toStartOf="parent"
     app:layout_constraintEnd_toEndOf="parent"
     android:layout_marginTop="24dp"

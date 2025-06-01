@@ -33,7 +33,7 @@ class InternetSender {
                 if (!response.isSuccessful) {
                     throw Exception("Failed to send data to server: ${response.code}")
                 }
-                // Handle successful response here (e.g., logging, callbacks)
+                
                 println("Data successfully sent to server.")
             }
         }

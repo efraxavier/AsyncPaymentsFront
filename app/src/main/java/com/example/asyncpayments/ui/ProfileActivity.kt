@@ -3,7 +3,6 @@ package com.example.asyncpayments.ui
 import android.content.Intent
 import android.os.Bundle
 import android.util.Base64
-import android.view.LayoutInflater
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
@@ -13,9 +12,15 @@ import com.example.asyncpayments.databinding.DialogResponseBinding
 import com.example.asyncpayments.network.RetrofitClient
 import com.example.asyncpayments.network.UserService
 import com.example.asyncpayments.utils.SharedPreferencesHelper
+import com.example.asyncpayments.utils.ShowNotification
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import kotlinx.coroutines.launch
 import org.json.JSONObject
+import java.time.Duration
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 class ProfileActivity : AppCompatActivity() {
     private lateinit var binding: ActivityProfileBinding
@@ -50,51 +55,96 @@ class ProfileActivity : AppCompatActivity() {
         }
 
         carregarPerfil()
+
+        binding.btnLogout.setOnClickListener {
+            val dialogBinding = DialogResponseBinding.inflate(layoutInflater)
+            dialogBinding.tvDialogTitle.text = "Sair"
+            dialogBinding.tvDialogMessage.text = "Tem certeza que deseja sair?"
+            dialogBinding.btnDialogOk.text = "Sim"
+            dialogBinding.btnDialogOk.setOnClickListener {
+                
+                SharedPreferencesHelper(this).clearToken()
+                val intent = Intent(this, LoginActivity::class.java)
+                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                startActivity(intent)
+                finish()
+            }
+            val dialog = AlertDialog.Builder(this)
+                .setView(dialogBinding.root)
+                .setCancelable(true)
+                .create()
+            dialog.show()
+            
+        }
     }
 
     private fun carregarPerfil() {
-    val token = SharedPreferencesHelper(this).getToken() ?: return
-    val emailLogado = getEmailFromToken(token) ?: return
+        val token = SharedPreferencesHelper(this).getToken() ?: return
+        val emailLogado = getEmailFromToken(token) ?: return
 
-    val userService = RetrofitClient.getInstance(this).create(UserService::class.java)
-    lifecycleScope.launch {
-        try {
-            val usuarios = userService.listarUsuarios()
-            val usuario = usuarios.find { it.email == emailLogado }
-            if (usuario != null) {
-                binding.tvProfileEmail.text = "Email: ${usuario.email}"
-                binding.tvProfileName.text = "Nome: ${usuario.nome} ${usuario.sobrenome}"
-                binding.tvProfileCpf.text = "CPF: ${usuario.cpf}"
-                binding.tvProfileCelular.text = "Celular: ${usuario.celular}"
-                binding.tvProfileFormaPagamento.text = "Forma de Pagamento: ${usuario.formaPagamentoAlternativa}"
-                binding.tvProfileRole.text = "Perfil: ${usuario.role}"
+        val userService = RetrofitClient.getInstance(this).create(UserService::class.java)
+        lifecycleScope.launch {
+            try {
+                val usuario = userService.getMe()
+                if (usuario != null) {
+                    binding.tvProfileEmail.text = "Email: ${usuario.email}"
+                    binding.tvProfileName.text = "Nome: ${usuario.nome} ${usuario.sobrenome}"
+                    binding.tvProfileCpf.text = "CPF: ${usuario.cpf}"
+                    binding.tvProfileCelular.text = "Celular: ${usuario.celular}"
+                    binding.tvProfileRole.text = "Perfil: ${usuario.role}"
 
-                val bloqueada = usuario.contaAssincrona.bloqueada
-                val status = if (bloqueada) "Bloqueada" else "Ativa"
-                binding.tvProfileStatus.text = "Status da conta: $status"
-                val statusColor = if (bloqueada) {
-                    getColor(R.color.red_accent)
+                    val bloqueada = usuario.contaAssincrona?.bloqueada ?: false
+                    val status = if (bloqueada) "Bloqueada" else "Ativa"
+                    binding.tvProfileStatus.text = "Status da conta: $status"
+                    val statusColor = if (bloqueada) {
+                        getColor(R.color.red_accent)
+                    } else {
+                        getColor(R.color.green_active)
+                    }
+                    binding.ivVerifiedUser.setColorFilter(statusColor)
+                    binding.tvProfileStatus.setTextColor(statusColor)
+
+                    val syncDateUtcString = usuario.contaAssincrona?.ultimaSincronizacao
+                    if (!syncDateUtcString.isNullOrBlank()) {
+                        val syncInstant = if (syncDateUtcString.endsWith("Z")) {
+                            Instant.parse(syncDateUtcString)
+                        } else {
+                            LocalDateTime.parse(syncDateUtcString, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                                .atZone(ZoneId.of("UTC")).toInstant()
+                        }
+                        val syncDateLocal = syncInstant.atZone(ZoneId.systemDefault()).toLocalDateTime()
+
+                        
+                        val (syncStatus, syncColor) = getSyncStatusText(syncDateUtcString!!)
+                        binding.tvProfileSync.text = syncStatus
+                        binding.tvProfileSync.setTextColor(getColor(syncColor))
+
+                        
+                        val lastSyncFormatted = syncDateLocal.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
+                        binding.tvProfileSyncDate.text = "Última sincronização: $lastSyncFormatted"
+                    } else {
+                        binding.tvProfileSync.text = "Sincronização: --"
+                        binding.tvProfileSyncDate.text = "Última sincronização: --"
+                    }
                 } else {
-                    getColor(R.color.green_active)
+                    binding.tvProfileEmail.text = "Email: --"
+                    binding.tvProfileName.text = "Nome: --"
+                    binding.tvProfileCpf.text = "CPF: --"
+                    binding.tvProfileCelular.text = "Celular: --"
+                    binding.tvProfileRole.text = "Perfil: --"
+                    binding.tvProfileStatus.text = "Status da conta: --"
+                    binding.tvProfileSync.text = "Última sincronização: --"
                 }
-                binding.ivVerifiedUser.setColorFilter(statusColor)
-                binding.tvProfileStatus.setTextColor(statusColor)
-                binding.tvProfileSync.text = "Última sincronização: ${usuario.contaAssincrona.ultimaSincronizacao}"
-            } else {
-                binding.tvProfileEmail.text = "Email: --"
-                binding.tvProfileName.text = "Nome: --"
-                binding.tvProfileCpf.text = "CPF: --"
-                binding.tvProfileCelular.text = "Celular: --"
-                binding.tvProfileFormaPagamento.text = "Forma de Pagamento: --"
-                binding.tvProfileRole.text = "Perfil: --"
-                binding.tvProfileStatus.text = "Status da conta: --"
-                binding.tvProfileSync.text = "Última sincronização: --"
+            } catch (e: Exception) {
+                ShowNotification.show(
+                    this@ProfileActivity,
+                    ShowNotification.Type.GENERIC,
+                    0.0,
+                    "Erro ao carregar perfil: ${e.message}"
+                )
             }
-        } catch (e: Exception) {
-            showCustomDialog("Erro", "Erro ao carregar perfil: ${e.message}")
         }
     }
-}
 
     private fun getEmailFromToken(token: String): String? {
         return try {
@@ -106,14 +156,34 @@ class ProfileActivity : AppCompatActivity() {
         }
     }
 
-    private fun showCustomDialog(title: String, message: String) {
-        val dialogBinding = DialogResponseBinding.inflate(LayoutInflater.from(this))
-        dialogBinding.tvDialogTitle.text = title
-        dialogBinding.tvDialogMessage.text = message
-        AlertDialog.Builder(this)
-            .setView(dialogBinding.root)
-            .setCancelable(true)
-            .create()
-            .show()
+    private fun getSyncStatusText(syncDateUtcString: String): Pair<String, Int> {
+        
+        val syncInstant = if (syncDateUtcString.endsWith("Z")) {
+            Instant.parse(syncDateUtcString)
+        } else {
+            LocalDateTime.parse(syncDateUtcString, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                .atZone(ZoneId.of("UTC")).toInstant()
+        }
+        val syncDateLocal = syncInstant.atZone(ZoneId.systemDefault()).toLocalDateTime()
+        val now = LocalDateTime.now()
+        val duration = Duration.between(syncDateLocal, now)
+        val hours = duration.toHours()
+        val minutes = duration.toMinutes() % 60
+        val days = duration.toDays()
+
+        val statusText = when {
+            hours >= 24 -> "Sincronizado há $days dias"
+            hours > 0 -> "Sincronizado há $hours horas"
+            minutes > 0 -> "Sincronizado há $minutes minutos"
+            else -> "Sincronizado agora"
+        }
+
+        val color = when {
+            hours >= 72 -> R.color.red_accent 
+            hours >= 60 -> R.color.yellow_accent 
+            else -> R.color.green_active 
+        }
+
+        return Pair(statusText, color)
     }
 }

@@ -42,20 +42,6 @@
                 style="@style/OrangeEditText"/>
         </com.google.android.material.textfield.TextInputLayout>
 
-        <AutoCompleteTextView
-            android:id="@+id/actvFormaPagamento"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:hint="Forma de Pagamento"
-            style="@style/OrangeEditText"
-            android:visibility="gone"
-            app:layout_constraintTop_toBottomOf="@id/tvRegisterPrompt"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginTop="24dp"
-            android:layout_marginStart="32dp"
-            android:layout_marginEnd="32dp"/>
-
         <Button
             android:id="@+id/btnNext"
             style="@style/OrangeButton"

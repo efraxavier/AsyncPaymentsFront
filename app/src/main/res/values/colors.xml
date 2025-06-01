@@ -10,4 +10,5 @@
     <color name="hex_border">#FFA726</color>
     <color name="dark_gray">#222222</color>   
     <color name="green_active">#388E3C</color>  
+    <color name="light_gray">#E0E0E0</color>
 </resources>

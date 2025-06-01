@@ -2,16 +2,18 @@
     android:orientation="vertical"
     android:padding="24dp"
     android:background="@drawable/rounded_orange_bg"
-    android:layout_width="wrap_content"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:gravity="center">
+    android:gravity="center"
+    android:layout_gravity="center">
 
     <ImageView
         android:id="@+id/ivDialogIcon"
         android:layout_width="48dp"
         android:layout_height="48dp"
         android:src="@drawable/ic_check_circle"
-        android:tint="@color/orange_primary"/>
+        android:tint="@color/orange_primary"
+        android:layout_gravity="center"/>
 
     <TextView
         android:id="@+id/tvDialogTitle"
@@ -20,7 +22,19 @@
         android:text="Sucesso!"
         android:textStyle="bold"
         android:textSize="20sp"
-        android:layout_marginTop="8dp"/>
+        android:layout_marginTop="8dp"
+        android:textColor="@android:color/white"
+        android:gravity="center"/>
+
+    <TextView
+        android:id="@+id/tvDialogMessage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Mensagem formatada aqui"
+        android:layout_marginTop="8dp"
+        android:textColor="@color/light_gray"
+        android:gravity="center"/>
+
     <Button
         android:id="@+id/btnDialogOk"
         android:layout_width="match_parent"
@@ -28,10 +42,4 @@
         android:text="OK"
         style="@style/OrangeButton"
         android:layout_marginTop="16dp"/>
-    <TextView
-        android:id="@+id/tvDialogMessage"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Mensagem formatada aqui"
-        android:layout_marginTop="8dp"/>
 </LinearLayout>

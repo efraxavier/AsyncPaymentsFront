@@ -5,9 +5,10 @@ data class TransactionResponse(
     val idUsuarioOrigem: Long,
     val idUsuarioDestino: Long,
     val valor: Double,
-    val tipoTransacao: String,
+    val tipoTransacao: String?,
     val metodoConexao: String,
     val gatewayPagamento: String,
+    val descricao: String?, 
     val dataCriacao: String,
     val dataAtualizacao: String,
     val sincronizada: Boolean

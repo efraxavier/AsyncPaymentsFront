@@ -53,10 +53,10 @@ class NFCSender(private val activity: Activity) {
             if (ndef != null) {
                 ndef.connect()
                 if (ndef.maxSize < ndefMessage.toByteArray().size) {
-                    // Tag too small
+                    
                 } else {
                     ndef.writeNdefMessage(ndefMessage)
-                    // Success
+                    
                 }
                 ndef.close()
             }

@@ -7,6 +7,6 @@ data class RegisterRequest(
     val nome: String,
     val sobrenome: String,
     val celular: String,
-    val formaPagamentoAlternativa: String,
-    val role: String = "USER"
+    val role: String = "USER",
+    val consentimentoDados: Boolean = true
 )
