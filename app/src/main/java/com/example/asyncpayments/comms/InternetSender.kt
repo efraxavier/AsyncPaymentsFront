@@ -16,9 +16,11 @@ class InternetSender {
     suspend fun send(data: PaymentData, url: String) {
         withContext(Dispatchers.IO) {
             val json = JSONObject().apply {
-                put("amount", data.amount)
-                put("sender", data.sender)
-                put("receiver", data.receiver)
+                put("id", data.id)
+                put("valor", data.valor)
+                put("origem", data.origem)
+                put("destino", data.destino)
+                put("data", data.data)
             }
 
             val body = json.toString().toRequestBody("application/json".toMediaType())
@@ -31,7 +33,7 @@ class InternetSender {
                 if (!response.isSuccessful) {
                     throw Exception("Failed to send data to server: ${response.code}")
                 }
-                // Handle successful response here (e.g., logging, callbacks)
+                
                 println("Data successfully sent to server.")
             }
         }

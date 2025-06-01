@@ -58,8 +58,8 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.okhttp)
-    implementation(libs.okhttp.logging) // ou libs.okhttp-logging, conforme o nome acima
+    implementation(libs.okhttp.logging) 
     implementation(libs.retrofit)
     implementation(libs.material)
-    implementation(libs.retrofit.gson) // ou libs.retrofit-gson, conforme o nome acima
+    implementation(libs.retrofit.gson) 
 }

@@ -1,10 +1,10 @@
 <resources>
-    <style name="Theme.AsyncPayments" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
+    <style name="Theme.AsyncPayments" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="colorPrimary">@color/orange_primary</item>
         <item name="colorPrimaryVariant">@color/orange_dark</item>
         <item name="colorOnPrimary">@color/white</item>
-        <item name="colorSecondary">@color/tech_gray</item>
-        <item name="android:colorBackground">@color/orange_light</item>
-        <item name="android:windowBackground">@color/orange_light</item>
+        <item name="colorSecondary">@color/yellow_accent</item>
+        <item name="android:colorBackground">@color/tech_gray</item>
+        <item name="android:windowBackground">@color/tech_gray</item>
     </style>
 </resources>

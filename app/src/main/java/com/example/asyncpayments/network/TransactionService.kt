@@ -5,15 +5,27 @@ import com.example.asyncpayments.model.TransactionResponse
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PUT
+import retrofit2.http.DELETE
 import retrofit2.http.Path
 
 interface TransactionService {
-    @GET("transacoes/todas")
-    suspend fun getAllTransactions(): List<TransactionResponse>
-
-    @POST("transacoes/realizar")
+    @POST("transacoes")
     suspend fun sendTransaction(@Body request: TransactionRequest): TransactionResponse
 
-    @POST("transacoes/adicionar-assincrona/{idUsuario}")
-    suspend fun transferToAsyncAccount(@Path("idUsuario") userId: String): TransactionResponse
+    @GET("transacoes")
+    suspend fun getAllTransactions(): List<TransactionResponse>
+
+    @GET("transacoes/{id}")
+    suspend fun getTransactionById(@Path("id") id: Long): TransactionResponse
+
+    @PUT("transacoes/{id}")
+    suspend fun updateTransaction(@Path("id") id: Long, @Body request: TransactionRequest): TransactionResponse
+
+    @DELETE("transacoes/{id}")
+    suspend fun deleteTransaction(@Path("id") id: Long)
+
+    @GET("transacoes/recebidas")
+    suspend fun getReceivedTransactions(): List<TransactionResponse>
+
 }
