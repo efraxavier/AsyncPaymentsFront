@@ -60,9 +60,9 @@ app/
 - **ProfileActivity**: Tela de perfil do usuário.
 - **AddFundsActivity**: Tela para adicionar fundos à conta assíncrona.
 
----
 
 ## Backend
+
 
 O app espera um backend REST rodando em `http://10.0.2.2:8080/` (localhost para emulador Android).
 
@@ -93,8 +93,6 @@ O app espera um backend REST rodando em `http://10.0.2.2:8080/` (localhost para 
 #### **Sincronização**
 - `POST /sincronizacao/manual` - Sincronizar todas as contas.
 - `POST /sincronizacao/manual/{id}` - Sincronizar uma conta específica.
-
----
 
 ## Como rodar
 
