@@ -1,7 +1,7 @@
 {
   "_type": "export",
   "__export_format": 4,
-  "__export_date": "2025-05-31T00:00:00.000Z",
+  "__export_date": "2025-06-06T00:00:00.000Z",
   "__export_source": "insomnia.desktop.app:v2024.2.0",
   "resources": [
     {
@@ -9,7 +9,7 @@
       "parentId": "wrk_asyncpayments",
       "name": "Base Environment",
       "data": {
-        "base_url": "https://00c1-2804-1b3-a640-fb0-402a-e4d7-e80b-916c.ngrok-free.app",
+        "base_url": "http://localhost:8080",
         "bearer_token": ""
       },
       "_type": "environment"
@@ -55,7 +55,6 @@
       "name": "Sincronização (ADMIN)",
       "_type": "request_group"
     },
-
     {
       "_id": "req_auth_register",
       "parentId": "fld_auth",
@@ -131,7 +130,6 @@
       },
       "_type": "request"
     },
-
     {
       "_id": "req_usuarios_listar",
       "parentId": "fld_usuarios_admin",
@@ -196,7 +194,6 @@
       },
       "_type": "request"
     },
-
     {
       "_id": "req_usuarios_me",
       "parentId": "fld_usuarios_user",
@@ -242,7 +239,6 @@
       },
       "_type": "request"
     },
-
     {
       "_id": "req_transacoes_listar",
       "parentId": "fld_transacoes_admin",
@@ -274,41 +270,6 @@
       "_type": "request"
     },
     {
-      "_id": "req_transacoes_atualizar",
-      "parentId": "fld_transacoes_admin",
-      "name": "Atualizar Transação (Not Implemented)",
-      "method": "PUT",
-      "url": "{{ base_url }}/transacoes/1",
-      "headers": [
-        { "name": "Content-Type", "value": "application/json" }
-      ],
-      "body": {
-        "mimeType": "application/json",
-        "text": "{\n  \"idUsuarioOrigem\": 1,\n  \"idUsuarioDestino\": 2,\n  \"valor\": 100.0,\n  \"gatewayPagamento\": \"PIX\",\n  \"metodoConexao\": \"API\"\n}"
-      },
-      "authentication": {
-        "type": "bearer",
-        "token": "{{ bearer_token }}"
-      },
-      "_type": "request"
-    },
-    {
-      "_id": "req_transacoes_deletar",
-      "parentId": "fld_transacoes_admin",
-      "name": "Deletar Transação",
-      "method": "DELETE",
-      "url": "{{ base_url }}/transacoes/1",
-      "headers": [
-        { "name": "Content-Type", "value": "application/json" }
-      ],
-      "authentication": {
-        "type": "bearer",
-        "token": "{{ bearer_token }}"
-      },
-      "_type": "request"
-    },
-
-    {
       "_id": "req_transacoes_criar",
       "parentId": "fld_transacoes_user",
       "name": "Criar Transação",
@@ -328,17 +289,17 @@
       "_type": "request"
     },
     {
-      "_id": "req_transacoes_deposito_async",
+      "_id": "req_transacoes_adicionar_fundos",
       "parentId": "fld_transacoes_user",
-      "name": "Depositar (Conta Síncrona → Assíncrona)",
+      "name": "Adicionar Fundos",
       "method": "POST",
-      "url": "{{ base_url }}/transacoes",
+      "url": "{{ base_url }}/transacoes/adicionar-fundos",
       "headers": [
         { "name": "Content-Type", "value": "application/json" }
       ],
       "body": {
         "mimeType": "application/json",
-        "text": "{\n  \"idUsuarioOrigem\": 1,\n  \"idUsuarioDestino\": 1,\n  \"valor\": 50.0,\n  \"gatewayPagamento\": \"INTERNO\",\n  \"metodoConexao\": \"ASYNC\",\n  \"descricao\": \"Depósito interno para conta assíncrona\"\n}"
+        "text": "{\n  \"idUsuarioOrigem\": 20,\n  \"idUsuarioDestino\": 20,\n  \"valor\": 3.0,\n  \"metodoConexao\": \"ASYNC\",\n  \"gatewayPagamento\": \"INTERNO\",\n  \"descricao\": \"Adição de fundos à conta assíncrona\"\n}"
       },
       "authentication": {
         "type": "bearer",
@@ -346,22 +307,6 @@
       },
       "_type": "request"
     },
-    {
-      "_id": "req_usuarios_me_atualizado",
-      "parentId": "fld_usuarios_user",
-      "name": "Buscar Meu Usuário (Saldo Atualizado)",
-      "method": "GET",
-      "url": "{{ base_url }}/usuarios/me",
-      "headers": [
-        { "name": "Content-Type", "value": "application/json" }
-      ],
-      "authentication": {
-        "type": "bearer",
-        "token": "{{ bearer_token }}"
-      },
-      "_type": "request"
-    },
-
     {
       "_id": "req_sinc_todas",
       "parentId": "fld_sincronizacao",
