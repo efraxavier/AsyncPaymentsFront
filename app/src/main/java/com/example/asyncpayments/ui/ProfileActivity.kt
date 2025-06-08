@@ -3,6 +3,7 @@ package com.example.asyncpayments.ui
 import android.content.Intent
 import android.os.Bundle
 import android.util.Base64
+import android.util.Log
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
@@ -79,13 +80,15 @@ class ProfileActivity : AppCompatActivity() {
     }
 
     private fun carregarPerfil() {
-        val token = SharedPreferencesHelper(this).getToken() ?: return
-        val emailLogado = getEmailFromToken(token) ?: return
+        val token = SharedPreferencesHelper(this).getToken()
+        Log.d("ProfileActivity", "Token: $token")
 
         val userService = RetrofitClient.getInstance(this).create(UserService::class.java)
+
         lifecycleScope.launch {
             try {
                 val usuario = userService.getMe()
+                Log.d("ProfileActivity", "Usuário: $usuario")
                 if (usuario != null) {
                     binding.tvProfileEmail.text = "Email: ${usuario.email}"
                     binding.tvProfileName.text = "Nome: ${usuario.nome} ${usuario.sobrenome}"
@@ -96,52 +99,22 @@ class ProfileActivity : AppCompatActivity() {
                     val bloqueada = usuario.contaAssincrona?.bloqueada ?: false
                     val status = if (bloqueada) "Bloqueada" else "Ativa"
                     binding.tvProfileStatus.text = "Status da conta: $status"
-                    val statusColor = if (bloqueada) {
-                        getColor(R.color.red_accent)
-                    } else {
-                        getColor(R.color.green_active)
-                    }
-                    binding.ivVerifiedUser.setColorFilter(statusColor)
-                    binding.tvProfileStatus.setTextColor(statusColor)
 
                     val syncDateUtcString = usuario.contaAssincrona?.ultimaSincronizacao
                     if (!syncDateUtcString.isNullOrBlank()) {
-                        val syncInstant = if (syncDateUtcString.endsWith("Z")) {
-                            Instant.parse(syncDateUtcString)
-                        } else {
-                            LocalDateTime.parse(syncDateUtcString, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
-                                .atZone(ZoneId.of("UTC")).toInstant()
-                        }
+                        val syncInstant = Instant.parse(syncDateUtcString)
                         val syncDateLocal = syncInstant.atZone(ZoneId.systemDefault()).toLocalDateTime()
-
-                        
-                        val (syncStatus, syncColor) = getSyncStatusText(syncDateUtcString!!)
-                        binding.tvProfileSync.text = syncStatus
-                        binding.tvProfileSync.setTextColor(getColor(syncColor))
-
-                        
                         val lastSyncFormatted = syncDateLocal.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
                         binding.tvProfileSyncDate.text = "Última sincronização: $lastSyncFormatted"
                     } else {
-                        binding.tvProfileSync.text = "Sincronização: --"
                         binding.tvProfileSyncDate.text = "Última sincronização: --"
                     }
                 } else {
-                    binding.tvProfileEmail.text = "Email: --"
-                    binding.tvProfileName.text = "Nome: --"
-                    binding.tvProfileCpf.text = "CPF: --"
-                    binding.tvProfileCelular.text = "Celular: --"
-                    binding.tvProfileRole.text = "Perfil: --"
-                    binding.tvProfileStatus.text = "Status da conta: --"
-                    binding.tvProfileSync.text = "Última sincronização: --"
+                    exibirErro()
                 }
             } catch (e: Exception) {
-                ShowNotification.show(
-                    this@ProfileActivity,
-                    ShowNotification.Type.GENERIC,
-                    0.0,
-                    "Erro ao carregar perfil: ${e.message}"
-                )
+                Log.e("ProfileActivity", "Erro ao carregar perfil: ${e.message}")
+                exibirErro()
             }
         }
     }
@@ -185,5 +158,25 @@ class ProfileActivity : AppCompatActivity() {
         }
 
         return Pair(statusText, color)
+    }
+
+    private fun exibirDadosFake() {
+        binding.tvProfileEmail.text = "Email: joao.silva@example.com"
+        binding.tvProfileName.text = "Nome: João Silva"
+        binding.tvProfileCpf.text = "CPF: 000.000.000-00"
+        binding.tvProfileCelular.text = "Celular: (00) 00000-0000"
+        binding.tvProfileRole.text = "Perfil: USER"
+        binding.tvProfileStatus.text = "Status da conta: Ativa"
+        binding.tvProfileSync.text = "Última sincronização: --"
+    }
+
+    private fun exibirErro() {
+        binding.tvProfileEmail.text = "Erro ao carregar email"
+        binding.tvProfileName.text = "Erro ao carregar nome"
+        binding.tvProfileCpf.text = "Erro ao carregar CPF"
+        binding.tvProfileCelular.text = "Erro ao carregar celular"
+        binding.tvProfileRole.text = "Erro ao carregar perfil"
+        binding.tvProfileStatus.text = "Erro ao carregar status"
+        binding.tvProfileSyncDate.text = "Erro ao carregar sincronização"
     }
 }

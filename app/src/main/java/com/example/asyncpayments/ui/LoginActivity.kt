@@ -29,10 +29,8 @@ class LoginActivity : AppCompatActivity() {
             if (email.isNotEmpty() && password.isNotEmpty()) {
                 login(email, password)
             } else {
-                ShowNotification.show(
-                    this,
+                showNotificationSafe(
                     ShowNotification.Type.LOGIN_ERROR,
-                    0.0,
                     "Preencha todos os campos"
                 )
             }
@@ -45,10 +43,8 @@ class LoginActivity : AppCompatActivity() {
 
     private fun login(email: String, password: String) {
         if (loginAttempts >= maxAttempts) {
-            ShowNotification.show(
-                this,
+            showNotificationSafe(
                 ShowNotification.Type.LOGIN_ERROR,
-                0.0,
                 "Você excedeu o número máximo de tentativas. Tente novamente mais tarde."
             )
             return
@@ -62,10 +58,7 @@ class LoginActivity : AppCompatActivity() {
             try {
                 val response = authService.login(authRequest)
                 SharedPreferencesHelper(this@LoginActivity).saveToken(response.token)
-                ShowNotification.show(
-                    this@LoginActivity,
-                    ShowNotification.Type.LOGIN_SUCCESS
-                )
+                showNotificationSafe(ShowNotification.Type.LOGIN_SUCCESS)
                 startActivity(Intent(this@LoginActivity, HomeActivity::class.java))
                 finish()
             } catch (e: Exception) {
@@ -77,13 +70,14 @@ class LoginActivity : AppCompatActivity() {
                         "E-mail ou senha incorretos. Tentativas restantes: ${maxAttempts - loginAttempts}"
                     else -> "Erro ao fazer login: ${msg}"
                 }
-                ShowNotification.show(
-                    this@LoginActivity,
-                    ShowNotification.Type.LOGIN_ERROR,
-                    0.0,
-                    userMsg
-                )
+                showNotificationSafe(ShowNotification.Type.LOGIN_ERROR, userMsg)
             }
+        }
+    }
+
+    private fun showNotificationSafe(type: ShowNotification.Type, message: String = "") {
+        if (!isFinishing && !isDestroyed) {
+            ShowNotification.show(this, type, extra = message)
         }
     }
 }

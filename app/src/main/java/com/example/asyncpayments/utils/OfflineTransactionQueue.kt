@@ -1,29 +1,23 @@
 package com.example.asyncpayments.utils
 
 import android.content.Context
+import android.util.Log
 import com.example.asyncpayments.model.PaymentData
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 
 object OfflineTransactionQueue {
-    private const val PREFS_NAME = "offline_queue"
-    private const val KEY_QUEUE = "queue"
+    private val transactionQueue = mutableListOf<PaymentData>()
 
-    fun save(context: Context, data: PaymentData) {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val list = loadAll(context).toMutableList()
-        list.add(data)
-        prefs.edit().putString(KEY_QUEUE, Gson().toJson(list)).apply()
+    fun saveTransaction(context: Context, paymentData: PaymentData) {
+        transactionQueue.add(paymentData)
+        Log.d("OfflineTransactionQueue", "Transação salva offline: $paymentData")
     }
 
     fun loadAll(context: Context): List<PaymentData> {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val json = prefs.getString(KEY_QUEUE, "[]")
-        val type = object : TypeToken<List<PaymentData>>() {}.type
-        return Gson().fromJson(json, type)
+        return transactionQueue
     }
 
     fun clear(context: Context) {
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().clear().apply()
+        transactionQueue.clear()
+        Log.d("OfflineTransactionQueue", "Fila de transações offline limpa.")
     }
 }

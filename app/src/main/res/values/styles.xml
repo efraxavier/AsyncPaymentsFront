@@ -36,4 +36,11 @@
         <item name="android:textColor">@color/white</item>
         <item name="android:textColorHint">@color/orange_primary</item>
     </style>
+    <style name="OrangeTextInputLayout" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        <item name="boxStrokeColor">@color/orange_primary</item>
+        <item name="hintTextColor">@color/orange_primary</item>
+        <item name="android:textColorHint">@color/orange_primary</item>
+        <item name="boxBackgroundColor">@color/tech_black</item>
+        <item name="android:textColor">@color/white</item>
+    </style>
 </resources>

@@ -12,6 +12,7 @@ import com.example.asyncpayments.utils.ShowNotification
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import android.util.Base64
+import android.util.Log
 
 class AddFundsActivity : AppCompatActivity() {
     private lateinit var binding: ActivityAddFundsBinding
@@ -60,7 +61,6 @@ class AddFundsActivity : AppCompatActivity() {
     }
 
     private fun addFunds(userId: Long, valor: Double) {
-        val descricao = "" 
         val service = RetrofitClient.getInstance(this).create(TransactionService::class.java)
         lifecycleScope.launch {
             try {
@@ -70,11 +70,10 @@ class AddFundsActivity : AppCompatActivity() {
                     valor = valor,
                     metodoConexao = "ASYNC",
                     gatewayPagamento = "INTERNO",
-                    descricao = descricao
+                    descricao = "Adição de fundos à conta assíncrona"
                 )
                 val apiResponse = service.sendTransaction(request)
-                val mensagem = "Método: ${apiResponse.metodoConexao}\n" +
-                               "Enviado para ID: ${apiResponse.idUsuarioDestino}\n" +
+                val mensagem = "Fundos adicionados com sucesso!\n" +
                                "Valor: R$ %.2f".format(apiResponse.valor)
                 ShowNotification.show(
                     this@AddFundsActivity,
@@ -82,7 +81,16 @@ class AddFundsActivity : AppCompatActivity() {
                     apiResponse.valor,
                     mensagem
                 )
+            } catch (e: retrofit2.HttpException) {
+                Log.e("AddFundsActivity", "Erro ao adicionar fundos: ${e.response()?.errorBody()?.string()}", e)
+                ShowNotification.show(
+                    this@AddFundsActivity,
+                    ShowNotification.Type.GENERIC,
+                    valor,
+                    "Erro ao adicionar fundos: ${e.response()?.errorBody()?.string()}"
+                )
             } catch (e: Exception) {
+                Log.e("AddFundsActivity", "Erro ao adicionar fundos", e)
                 ShowNotification.show(
                     this@AddFundsActivity,
                     ShowNotification.Type.GENERIC,
@@ -101,6 +109,18 @@ class AddFundsActivity : AppCompatActivity() {
             json.getLong("id")
         } catch (e: Exception) {
             null
+        }
+    }
+
+    private fun isTokenExpired(token: String): Boolean {
+        return try {
+            val payload = Base64.decode(token.split(".")[1], Base64.DEFAULT)
+            val json = JSONObject(String(payload))
+            val exp = json.getLong("exp")
+            val currentTime = System.currentTimeMillis() / 1000
+            currentTime > exp
+        } catch (e: Exception) {
+            true
         }
     }
 }

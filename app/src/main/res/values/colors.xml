@@ -1,10 +1,10 @@
 <resources>
     <color name="tech_black">#181A1B</color>
     <color name="tech_gray">#23272A</color>
-    <color name="orange_primary">#FF9800</color>
+    <color name="orange_primary">#FFB74D</color>
     <color name="orange_dark">#F57C00</color>
     <color name="orange_light">#FFE0B2</color>
-    <color name="yellow_accent">#FFD600</color>
+    <color name="yellow_accent">#FFA726</color>
     <color name="red_accent">#FF5252</color>
     <color name="white">#FFFFFF</color>
     <color name="hex_border">#FFA726</color>

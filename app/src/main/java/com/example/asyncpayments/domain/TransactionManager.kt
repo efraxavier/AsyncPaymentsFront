@@ -1,6 +1,7 @@
 package com.example.asyncpayments.domain
 
 import android.content.Context
+import com.example.asyncpayments.model.PaymentData
 import com.example.asyncpayments.model.TransactionRequest
 import com.example.asyncpayments.network.TransactionService
 import com.example.asyncpayments.utils.OfflineTransactionQueue
@@ -17,7 +18,7 @@ class TransactionManager(
         buscarIdUsuarioPorEmail: suspend (String) -> Long?,
         onResult: (Int, Int) -> Unit
     ) {
-        val queue = offlineQueue.loadAll(context)
+        val queue: List<PaymentData> = offlineQueue.loadAll(context)
         if (queue.isEmpty()) {
             onResult(0, 0)
             return

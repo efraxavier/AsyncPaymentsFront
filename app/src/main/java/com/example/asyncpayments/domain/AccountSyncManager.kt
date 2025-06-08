@@ -5,7 +5,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 class AccountSyncManager(private val syncService: SyncService) {
-    fun sincronizarMinhaConta(scope: CoroutineScope, onSuccess: (String) -> Unit, onError: (String) -> Unit) {
+    fun sincronizarMinhaConta(
+        scope: CoroutineScope,
+        onSuccess: (String) -> Unit,
+        onError: (String) -> Unit
+    ) {
         scope.launch {
             try {
                 val response = syncService.sincronizarMinhaConta()
