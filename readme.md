@@ -7,13 +7,15 @@ AsyncPayments é um aplicativo Android para realização de pagamentos assíncro
 ## Funcionalidades
 
 - **Cadastro e Login de Usuário**
-  - Cadastro com e-mail e senha.
+  - Cadastro com e-mail, senha, CPF, nome, sobrenome e celular.
+  - Consentimento LGPD para uso de dados.
   - Login com autenticação JWT.
   - Armazenamento seguro do token para requisições autenticadas.
 
 - **Transações**
   - Envio de pagamentos entre usuários.
   - Seleção do método de comunicação: Internet, NFC, Bluetooth, SMS.
+  - Adição de fundos à conta assíncrona.
   - Visualização do histórico de transações.
   - Sincronização manual de transações offline.
 
@@ -56,18 +58,41 @@ app/
 - **TransactionActivity**: Tela principal para realizar e visualizar transações.
 - **HomeActivity**: Tela inicial com informações de saldo e sincronização.
 - **ProfileActivity**: Tela de perfil do usuário.
+- **AddFundsActivity**: Tela para adicionar fundos à conta assíncrona.
 
 ---
 
 ## Backend
 
-- O app espera um backend REST rodando em `http://10.0.2.2:8080/` (localhost para emulador Android).
-- Endpoints principais:
-  - `/auth/login` - Login e obtenção do token JWT.
-  - `/register` - Cadastro de usuário.
-  - `/transacoes/realizar` - Realizar transação.
-  - `/transacoes/todas` - Listar transações.
-  - `/usuarios/me` - Obter informações do usuário logado.
+O app espera um backend REST rodando em `http://10.0.2.2:8080/` (localhost para emulador Android).
+
+### **Endpoints Principais**
+
+#### **Autenticação**
+- `POST /auth/register` - Registrar um novo usuário.
+- `POST /auth/login` - Login e obtenção do token JWT.
+- `GET /auth/me/id` - Obter o ID do usuário logado.
+- `GET /auth/user/id?email={email}` - Buscar ID de um usuário pelo e-mail.
+- `GET /auth/test` - Testar autenticação.
+
+#### **Usuários**
+- `GET /usuarios` - Listar todos os usuários (ADMIN).
+- `GET /usuarios/{id}` - Buscar usuário por ID (ADMIN).
+- `PUT /usuarios/{id}` - Atualizar informações de um usuário (ADMIN).
+- `DELETE /usuarios/{id}` - Deletar um usuário (ADMIN).
+- `GET /usuarios/me` - Obter informações do usuário logado.
+- `POST /usuarios/me/aceitar-kyc` - Aceitar validação de identidade (KYC).
+- `POST /usuarios/me/anonimizar` - Anonimizar dados do usuário.
+
+#### **Transações**
+- `GET /transacoes` - Listar todas as transações (ADMIN).
+- `GET /transacoes/{id}` - Buscar transação por ID (ADMIN).
+- `POST /transacoes` - Criar uma nova transação.
+- `POST /transacoes/adicionar-fundos` - Adicionar fundos à conta assíncrona.
+
+#### **Sincronização**
+- `POST /sincronizacao/manual` - Sincronizar todas as contas.
+- `POST /sincronizacao/manual/{id}` - Sincronizar uma conta específica.
 
 ---
 
