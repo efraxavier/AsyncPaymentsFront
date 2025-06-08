@@ -9,13 +9,13 @@ import com.example.asyncpayments.utils.OfflineTransactionQueue
 
 class TransactionUseCase(
     private val transactionService: TransactionService,
-    private val offlineQueue: OfflineTransactionQueue
+    private val offlineTransactionQueue: OfflineTransactionQueue
 ) {
     suspend fun sendTransactionOnline(request: TransactionRequest): TransactionResponse {
         return transactionService.sendTransaction(request)
     }
 
     fun saveTransactionOffline(context: Context, paymentData: PaymentData) {
-        offlineQueue.save(context, paymentData)
+        offlineTransactionQueue.saveTransaction(context, paymentData)
     }
 }

@@ -3,6 +3,7 @@ package com.example.asyncpayments.ui
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
 import com.example.asyncpayments.databinding.ActivityRegisterBinding
 import com.example.asyncpayments.model.RegisterRequest
@@ -147,7 +148,7 @@ class RegisterActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 authService.register(registerRequest)
-                showSuccessAndLogin()
+                exibirDialogoLGPD()
             } catch (e: Exception) {
                 val msg = e.message ?: ""
                 val userMsg = when {
@@ -163,6 +164,33 @@ class RegisterActivity : AppCompatActivity() {
                 )
             }
         }
+    }
+
+    private fun exibirDialogoLGPD() {
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("Termos de Privacidade - LGPD")
+            .setMessage(
+                "De acordo com a Lei Geral de Proteção de Dados (LGPD - Lei nº 13.709/2018), " +
+                "é necessário o seu consentimento para o uso dos dados fornecidos. " +
+                "Os dados serão utilizados exclusivamente para fins de cadastro e transações financeiras. " +
+                "Você pode revogar este consentimento a qualquer momento, conforme o Artigo 9º da LGPD. " +
+                "Deseja continuar?"
+            )
+            .setPositiveButton("Concordo") { _, _ ->
+                showSuccessAndLogin()
+            }
+            .setNegativeButton("Não concordo") { _, _ ->
+                ShowNotification.show(
+                    this,
+                    ShowNotification.Type.REGISTER_ERROR,
+                    0.0,
+                    "Cadastro não realizado. Você deve concordar com os termos para prosseguir."
+                )
+            }
+            .setCancelable(false)
+            .create()
+
+        dialog.show()
     }
 
     private fun showSuccessAndLogin() {

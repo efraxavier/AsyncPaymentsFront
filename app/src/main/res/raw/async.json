@@ -1,9 +1,19 @@
 {
   "_type": "export",
   "__export_format": 4,
-  "__export_date": "2025-05-28T00:00:00.000Z",
+  "__export_date": "2025-05-31T00:00:00.000Z",
   "__export_source": "insomnia.desktop.app:v2024.2.0",
   "resources": [
+    {
+      "_id": "env_base",
+      "parentId": "wrk_asyncpayments",
+      "name": "Base Environment",
+      "data": {
+        "base_url": "https://00c1-2804-1b3-a640-fb0-402a-e4d7-e80b-916c.ngrok-free.app",
+        "bearer_token": ""
+      },
+      "_type": "environment"
+    },
     {
       "_id": "wrk_asyncpayments",
       "name": "AsyncPayments API",
@@ -16,29 +26,42 @@
       "_type": "request_group"
     },
     {
-      "_id": "fld_usuarios",
+      "_id": "fld_usuarios_admin",
       "parentId": "wrk_asyncpayments",
-      "name": "Usuários",
+      "name": "Usuários (ADMIN)",
       "_type": "request_group"
     },
     {
-      "_id": "fld_transacoes",
+      "_id": "fld_usuarios_user",
       "parentId": "wrk_asyncpayments",
-      "name": "Transações",
+      "name": "Usuários (USER)",
+      "_type": "request_group"
+    },
+    {
+      "_id": "fld_transacoes_admin",
+      "parentId": "wrk_asyncpayments",
+      "name": "Transações (ADMIN)",
+      "_type": "request_group"
+    },
+    {
+      "_id": "fld_transacoes_user",
+      "parentId": "wrk_asyncpayments",
+      "name": "Transações (USER)",
       "_type": "request_group"
     },
     {
       "_id": "fld_sincronizacao",
       "parentId": "wrk_asyncpayments",
-      "name": "Sincronização",
+      "name": "Sincronização (ADMIN)",
       "_type": "request_group"
     },
+
     {
       "_id": "req_auth_register",
       "parentId": "fld_auth",
       "name": "Registrar",
       "method": "POST",
-      "url": "http://localhost:8080/auth/register",
+      "url": "{{ base_url }}/auth/register",
       "headers": [
         { "name": "Content-Type", "value": "application/json" }
       ],
@@ -53,7 +76,7 @@
       "parentId": "fld_auth",
       "name": "Login",
       "method": "POST",
-      "url": "http://localhost:8080/auth/login",
+      "url": "{{ base_url }}/auth/login",
       "headers": [
         { "name": "Content-Type", "value": "application/json" }
       ],
@@ -68,10 +91,14 @@
       "parentId": "fld_auth",
       "name": "Meu ID",
       "method": "GET",
-      "url": "http://localhost:8080/auth/me/id",
+      "url": "{{ base_url }}/auth/me/id",
       "headers": [
         { "name": "Content-Type", "value": "application/json" }
       ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ bearer_token }}"
+      },
       "_type": "request"
     },
     {
@@ -79,10 +106,14 @@
       "parentId": "fld_auth",
       "name": "Buscar ID por Email",
       "method": "GET",
-      "url": "http://localhost:8080/auth/user/id?email=admin@email.com",
+      "url": "{{ base_url }}/auth/user/id?email=admin@email.com",
       "headers": [
         { "name": "Content-Type", "value": "application/json" }
       ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ bearer_token }}"
+      },
       "_type": "request"
     },
     {
@@ -90,51 +121,53 @@
       "parentId": "fld_auth",
       "name": "Testar Autenticação",
       "method": "GET",
-      "url": "http://localhost:8080/auth/test",
+      "url": "{{ base_url }}/auth/test",
       "headers": [
         { "name": "Content-Type", "value": "application/json" }
       ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ bearer_token }}"
+      },
       "_type": "request"
     },
+
     {
       "_id": "req_usuarios_listar",
-      "parentId": "fld_usuarios",
+      "parentId": "fld_usuarios_admin",
       "name": "Listar Usuários",
       "method": "GET",
-      "url": "http://localhost:8080/usuarios",
+      "url": "{{ base_url }}/usuarios",
       "headers": [
         { "name": "Content-Type", "value": "application/json" }
       ],
-      "_type": "request"
-    },
-    {
-      "_id": "req_usuarios_me",
-      "parentId": "fld_usuarios",
-      "name": "Buscar Meu Usuário",
-      "method": "GET",
-      "url": "http://localhost:8080/usuarios/me",
-      "headers": [
-        { "name": "Content-Type", "value": "application/json" }
-      ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ bearer_token }}"
+      },
       "_type": "request"
     },
     {
       "_id": "req_usuarios_buscar_id",
-      "parentId": "fld_usuarios",
+      "parentId": "fld_usuarios_admin",
       "name": "Buscar Usuário por ID",
       "method": "GET",
-      "url": "http://localhost:8080/usuarios/1",
+      "url": "{{ base_url }}/usuarios/1",
       "headers": [
         { "name": "Content-Type", "value": "application/json" }
       ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ bearer_token }}"
+      },
       "_type": "request"
     },
     {
       "_id": "req_usuarios_atualizar",
-      "parentId": "fld_usuarios",
+      "parentId": "fld_usuarios_admin",
       "name": "Atualizar Usuário",
       "method": "PUT",
-      "url": "http://localhost:8080/usuarios/1",
+      "url": "{{ base_url }}/usuarios/1",
       "headers": [
         { "name": "Content-Type", "value": "application/json" }
       ],
@@ -142,62 +175,110 @@
         "mimeType": "application/json",
         "text": "{\n  \"email\": \"user@email.com\",\n  \"cpf\": \"12345678900\",\n  \"nome\": \"User\",\n  \"sobrenome\": \"Test\",\n  \"celular\": \"11999999999\"\n}"
       },
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ bearer_token }}"
+      },
       "_type": "request"
     },
     {
       "_id": "req_usuarios_deletar",
-      "parentId": "fld_usuarios",
+      "parentId": "fld_usuarios_admin",
       "name": "Deletar Usuário",
       "method": "DELETE",
-      "url": "http://localhost:8080/usuarios/1",
+      "url": "{{ base_url }}/usuarios/1",
       "headers": [
         { "name": "Content-Type", "value": "application/json" }
       ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ bearer_token }}"
+      },
+      "_type": "request"
+    },
+
+    {
+      "_id": "req_usuarios_me",
+      "parentId": "fld_usuarios_user",
+      "name": "Buscar Meu Usuário",
+      "method": "GET",
+      "url": "{{ base_url }}/usuarios/me",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ bearer_token }}"
+      },
       "_type": "request"
     },
     {
-      "_id": "req_transacoes_listar",
-      "parentId": "fld_transacoes",
-      "name": "Listar Transações",
-      "method": "GET",
-      "url": "http://localhost:8080/transacoes",
+      "_id": "req_usuarios_aceitar_kyc",
+      "parentId": "fld_usuarios_user",
+      "name": "Aceitar KYC",
+      "method": "POST",
+      "url": "{{ base_url }}/usuarios/me/aceitar-kyc",
       "headers": [
         { "name": "Content-Type", "value": "application/json" }
       ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ bearer_token }}"
+      },
+      "_type": "request"
+    },
+    {
+      "_id": "req_usuarios_anonimizar",
+      "parentId": "fld_usuarios_user",
+      "name": "Anonimizar Dados",
+      "method": "POST",
+      "url": "{{ base_url }}/usuarios/me/anonimizar",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ bearer_token }}"
+      },
+      "_type": "request"
+    },
+
+    {
+      "_id": "req_transacoes_listar",
+      "parentId": "fld_transacoes_admin",
+      "name": "Listar Transações",
+      "method": "GET",
+      "url": "{{ base_url }}/transacoes",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ bearer_token }}"
+      },
       "_type": "request"
     },
     {
       "_id": "req_transacoes_buscar_id",
-      "parentId": "fld_transacoes",
+      "parentId": "fld_transacoes_admin",
       "name": "Buscar Transação por ID",
       "method": "GET",
-      "url": "http://localhost:8080/transacoes/1",
+      "url": "{{ base_url }}/transacoes/1",
       "headers": [
         { "name": "Content-Type", "value": "application/json" }
       ],
-      "_type": "request"
-    },
-    {
-      "_id": "req_transacoes_criar",
-      "parentId": "fld_transacoes",
-      "name": "Criar Transação",
-      "method": "POST",
-      "url": "http://localhost:8080/transacoes",
-      "headers": [
-        { "name": "Content-Type", "value": "application/json" }
-      ],
-      "body": {
-        "mimeType": "application/json",
-        "text": "{\n  \"idUsuarioOrigem\": 1,\n  \"idUsuarioDestino\": 2,\n  \"valor\": 100.0,\n  \"gatewayPagamento\": \"PIX\",\n  \"metodoConexao\": \"API\"\n}"
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ bearer_token }}"
       },
       "_type": "request"
     },
     {
       "_id": "req_transacoes_atualizar",
-      "parentId": "fld_transacoes",
+      "parentId": "fld_transacoes_admin",
       "name": "Atualizar Transação (Not Implemented)",
       "method": "PUT",
-      "url": "http://localhost:8080/transacoes/1",
+      "url": "{{ base_url }}/transacoes/1",
       "headers": [
         { "name": "Content-Type", "value": "application/json" }
       ],
@@ -205,28 +286,95 @@
         "mimeType": "application/json",
         "text": "{\n  \"idUsuarioOrigem\": 1,\n  \"idUsuarioDestino\": 2,\n  \"valor\": 100.0,\n  \"gatewayPagamento\": \"PIX\",\n  \"metodoConexao\": \"API\"\n}"
       },
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ bearer_token }}"
+      },
       "_type": "request"
     },
     {
       "_id": "req_transacoes_deletar",
-      "parentId": "fld_transacoes",
+      "parentId": "fld_transacoes_admin",
       "name": "Deletar Transação",
       "method": "DELETE",
-      "url": "http://localhost:8080/transacoes/1",
+      "url": "{{ base_url }}/transacoes/1",
       "headers": [
         { "name": "Content-Type", "value": "application/json" }
       ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ bearer_token }}"
+      },
       "_type": "request"
     },
+
+    {
+      "_id": "req_transacoes_criar",
+      "parentId": "fld_transacoes_user",
+      "name": "Criar Transação",
+      "method": "POST",
+      "url": "{{ base_url }}/transacoes",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"idUsuarioOrigem\": 1,\n  \"idUsuarioDestino\": 2,\n  \"valor\": 100.0,\n  \"gatewayPagamento\": \"PIX\",\n  \"metodoConexao\": \"API\"\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ bearer_token }}"
+      },
+      "_type": "request"
+    },
+    {
+      "_id": "req_transacoes_deposito_async",
+      "parentId": "fld_transacoes_user",
+      "name": "Depositar (Conta Síncrona → Assíncrona)",
+      "method": "POST",
+      "url": "{{ base_url }}/transacoes",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"idUsuarioOrigem\": 1,\n  \"idUsuarioDestino\": 1,\n  \"valor\": 50.0,\n  \"gatewayPagamento\": \"INTERNO\",\n  \"metodoConexao\": \"ASYNC\",\n  \"descricao\": \"Depósito interno para conta assíncrona\"\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ bearer_token }}"
+      },
+      "_type": "request"
+    },
+    {
+      "_id": "req_usuarios_me_atualizado",
+      "parentId": "fld_usuarios_user",
+      "name": "Buscar Meu Usuário (Saldo Atualizado)",
+      "method": "GET",
+      "url": "{{ base_url }}/usuarios/me",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ bearer_token }}"
+      },
+      "_type": "request"
+    },
+
     {
       "_id": "req_sinc_todas",
       "parentId": "fld_sincronizacao",
       "name": "Sincronizar Todas as Contas",
       "method": "POST",
-      "url": "http://localhost:8080/sincronizacao/manual",
+      "url": "{{ base_url }}/sincronizacao/manual",
       "headers": [
         { "name": "Content-Type", "value": "application/json" }
       ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ bearer_token }}"
+      },
       "_type": "request"
     },
     {
@@ -234,10 +382,14 @@
       "parentId": "fld_sincronizacao",
       "name": "Sincronizar Conta por ID",
       "method": "POST",
-      "url": "http://localhost:8080/sincronizacao/manual/1",
+      "url": "{{ base_url }}/sincronizacao/manual/1",
       "headers": [
         { "name": "Content-Type", "value": "application/json" }
       ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ bearer_token }}"
+      },
       "_type": "request"
     }
   ]

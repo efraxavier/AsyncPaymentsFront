@@ -40,7 +40,7 @@
                 android:layout_height="wrap_content"
                 android:text="Conta Síncrona"
                 android:textStyle="bold"
-                android:textColor="@color/orange_primary"
+                android:textColor="@color/tech_gray"
                 android:textSize="16sp"/>
 
             <LinearLayout
@@ -107,7 +107,7 @@
                 android:layout_height="wrap_content"
                 android:text="Conta Assíncrona"
                 android:textStyle="bold"
-                android:textColor="@color/yellow_accent"
+                android:textColor="@color/tech_gray"
                 android:textSize="16sp"/>
 
             <LinearLayout

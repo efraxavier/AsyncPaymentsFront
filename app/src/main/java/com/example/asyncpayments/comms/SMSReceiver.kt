@@ -35,17 +35,16 @@ class SMSReceiver : BroadcastReceiver() {
                             gatewayPagamento = map["gatewayPagamento"] ?: "INTERNO",
                             descricao = map["descricao"] ?: "" 
                         )
-                        OfflineTransactionQueue.save(context, paymentData)
+                        OfflineTransactionQueue.saveTransaction(context, paymentData)
 
                         
                         ShowNotification.show(
                             context,
                             ShowNotification.Type.TRANSACTION_RECEIVED,
                             paymentData.valor,
-                            paymentData.origem 
+                            paymentData.origem
                         )
 
-                        
                         Log.d("SMSReceiver", "Pagamento recebido: ${paymentData.valor} de ${paymentData.origem}")
                     }
                 }

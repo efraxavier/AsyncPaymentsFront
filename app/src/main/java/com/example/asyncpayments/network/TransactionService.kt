@@ -1,5 +1,6 @@
 package com.example.asyncpayments.network
 
+import com.example.asyncpayments.model.ApiResponse
 import com.example.asyncpayments.model.TransactionRequest
 import com.example.asyncpayments.model.TransactionResponse
 import retrofit2.http.Body
@@ -8,6 +9,7 @@ import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.DELETE
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface TransactionService {
     @POST("transacoes")
@@ -28,4 +30,6 @@ interface TransactionService {
     @GET("transacoes/recebidas")
     suspend fun getReceivedTransactions(): List<TransactionResponse>
 
+    @POST("/transacoes/adicionar-fundos")
+    suspend fun addFunds(@Body request: TransactionRequest): TransactionResponse
 }

@@ -7,6 +7,7 @@
         android:layout_height="match_parent"
         android:background="@drawable/bg_hex_pattern">
 
+        <!-- Título da tela -->
         <TextView
             android:id="@+id/tvTransactionTitle"
             style="@style/OrangeText"
@@ -20,100 +21,64 @@
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginTop="32dp"/>
 
-        <EditText
-    android:id="@+id/etIdUsuarioOrigem"
-    style="@style/OrangeEditText"
-    android:layout_width="0dp"
-    android:layout_height="wrap_content"
-    android:hint="ID Usuário Origem"
-    app:layout_constraintTop_toBottomOf="@id/tvTransactionTitle"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintEnd_toEndOf="parent"
-    android:layout_marginTop="24dp"
-    android:layout_marginStart="32dp"
-    android:layout_marginEnd="32dp"/>
+        <!-- Caixa de texto única, sem label acima, apenas hint -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilGenericInput"
+            style="@style/OrangeTextInputLayout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:boxBackgroundMode="none"
+            app:layout_constraintTop_toBottomOf="@id/tvTransactionTitle"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="48dp"
+            android:layout_marginStart="32dp"
+            android:layout_marginEnd="32dp">
 
-<AutoCompleteTextView
-    android:id="@+id/etIdUsuarioDestino"
-    style="@style/OrangeEditText"
-    android:layout_width="0dp"
-    android:layout_height="wrap_content"
-    android:hint="ID Usuário Destino"
-    app:layout_constraintTop_toBottomOf="@id/etIdUsuarioOrigem"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintEnd_toEndOf="parent"
-    android:layout_marginTop="12dp"
-    android:layout_marginStart="32dp"
-    android:layout_marginEnd="32dp"/>
+            <AutoCompleteTextView
+                android:id="@+id/etGenericInput"
+                style="@style/OrangeEditText"
+                android:layout_width="match_parent"
+                android:layout_height="64dp"
+                android:hint=""
+                android:inputType="text"
+                android:drawableEnd="@drawable/ic_arrow_drop_down"
+                android:gravity="center_vertical"
+                android:textSize="20sp"
+                android:maxLines="1"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"/>
+        </com.google.android.material.textfield.TextInputLayout>
 
-<EditText
-    android:id="@+id/etAmount"
-    style="@style/OrangeEditText"
-    android:layout_width="0dp"
-    android:layout_height="wrap_content"
-    android:hint="Valor"
-    android:inputType="numberDecimal"
-    app:layout_constraintTop_toBottomOf="@id/etIdUsuarioDestino"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintEnd_toEndOf="parent"
-    android:layout_marginTop="12dp"
-    android:layout_marginStart="32dp"
-    android:layout_marginEnd="32dp"/>
+        <!-- Botão Voltar -->
+        <Button
+            android:id="@+id/btnBack"
+            style="@style/OrangeButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Voltar"
+            app:layout_constraintTop_toBottomOf="@id/tilGenericInput"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="32dp"
+            android:layout_marginStart="32dp"
+            android:layout_marginEnd="8dp"
+            app:layout_constraintEnd_toStartOf="@id/btnNext"/>
 
-<AutoCompleteTextView
-    android:id="@+id/actvMetodoConexao"
-    style="@style/OrangeEditText"
-    android:inputType="none"
-    android:focusable="false"
-    android:layout_width="0dp"
-    android:layout_height="wrap_content"
-    android:hint="Método de Conexão"
-    app:layout_constraintTop_toBottomOf="@id/etAmount"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintEnd_toEndOf="parent"
-    android:layout_marginTop="12dp"
-    android:layout_marginStart="32dp"
-    android:layout_marginEnd="32dp"/>
+        <!-- Botão Próximo/Finalizar -->
+        <Button
+            android:id="@+id/btnNext"
+            style="@style/OrangeButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Próximo"
+            app:layout_constraintTop_toBottomOf="@id/tilGenericInput"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="32dp"
+            android:layout_marginEnd="32dp"
+            android:layout_marginStart="8dp"
+            app:layout_constraintStart_toEndOf="@id/btnBack"/>
 
-<AutoCompleteTextView
-    android:id="@+id/actvGatewayPagamento"
-    style="@style/OrangeEditText"
-    android:layout_width="0dp"
-    android:layout_height="wrap_content"
-    android:hint="Gateway de Pagamento"
-    app:layout_constraintTop_toBottomOf="@id/actvMetodoConexao"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintEnd_toEndOf="parent"
-    android:layout_marginTop="12dp"
-    android:layout_marginStart="32dp"
-    android:layout_marginEnd="32dp"/>
-
-<EditText
-    android:id="@+id/etDescricao"
-    android:layout_width="0dp"
-    android:layout_height="wrap_content"
-    android:hint="Descrição (opcional, até 140 caracteres)"
-    android:maxLength="140"
-    android:inputType="textCapSentences|textMultiLine"
-    app:layout_constraintTop_toBottomOf="@id/actvGatewayPagamento"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintEnd_toEndOf="parent"
-    android:layout_marginTop="12dp"
-    android:layout_marginStart="32dp"
-    android:layout_marginEnd="32dp"/>
-
-<Button
-    android:id="@+id/btnSendTransaction"
-    style="@style/OrangeButton"
-    android:layout_width="0dp"
-    android:layout_height="wrap_content"
-    android:text="Enviar Transação"
-    app:layout_constraintTop_toBottomOf="@id/etDescricao"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintEnd_toEndOf="parent"
-    android:layout_marginTop="24dp"
-    android:layout_marginStart="32dp"
-    android:layout_marginEnd="32dp"/>
+        <!-- Bottom Navigation -->
         <com.google.android.material.bottomnavigation.BottomNavigationView
             android:id="@+id/bottomNav"
             android:layout_width="0dp"

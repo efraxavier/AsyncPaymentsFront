@@ -1,16 +1,13 @@
 package com.example.asyncpayments.domain
 
 import com.example.asyncpayments.network.UserService
-import com.example.asyncpayments.utils.SharedPreferencesHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 class AccountManager(
-    private val userService: UserService,
-    private val prefs: SharedPreferencesHelper
+    private val userService: UserService
 ) {
     fun carregarSaldos(scope: CoroutineScope, onResult: (Double, Double) -> Unit, onError: (String) -> Unit) {
-        val token = prefs.getToken() ?: return
         scope.launch {
             try {
                 val usuario = userService.getMe()

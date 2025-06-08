@@ -129,9 +129,7 @@ class HomeActivity : AppCompatActivity() {
         val userService = RetrofitClient.getInstance(this).create(UserService::class.java)
         val syncService = RetrofitClient.getInstance(this).create(SyncService::class.java)
         val transactionService = RetrofitClient.getInstance(this).create(TransactionService::class.java)
-        val prefs = SharedPreferencesHelper(this)
-
-        accountManager = AccountManager(userService, prefs)
+        accountManager = AccountManager(userService)
         syncManager = AccountSyncManager(syncService)
         transactionManager = TransactionManager(transactionService, OfflineTransactionQueue)
         connectionMonitor = ConnectionStatusMonitor(this) {
@@ -186,18 +184,12 @@ class HomeActivity : AppCompatActivity() {
     }
 
     private fun sincronizarTudo() {
-        syncManager.sincronizarMinhaConta(
-            lifecycleScope,
-            onSuccess = {  },
-            onError = {  }
-        )
         transactionManager.sincronizarTransacoesOffline(
             context = this,
             scope = lifecycleScope,
             buscarIdUsuarioPorEmail = ::buscarIdUsuarioPorEmail,
-            onResult = { sucesso, erro ->  }
+            onResult = { sucesso, erro -> }
         )
-        checarTransacoesRecebidasENotificar()
     }
 
     private fun sincronizarContas() {
@@ -236,14 +228,40 @@ class HomeActivity : AppCompatActivity() {
         val emailLogado = getEmailFromToken(token) ?: return
 
         val userService = RetrofitClient.getInstance(this).create(UserService::class.java)
+        val transactionService = RetrofitClient.getInstance(this).create(TransactionService::class.java)
+
         lifecycleScope.launch {
             try {
                 val usuario = userService.getMe()
                 if (usuario != null) {
-                    syncBalanceValue = usuario.contaSincrona?.saldo ?: 0.0
-                    asyncBalanceValue = usuario.contaAssincrona?.saldo ?: 0.0
-                    updateSyncBalance()
-                    updateAsyncBalance()
+                    val novoSaldoSync = usuario.contaSincrona?.saldo ?: 0.0
+                    val novoSaldoAsync = usuario.contaAssincrona?.saldo ?: 0.0
+
+                    // Atualizar saldo na interface apenas se houver alteração
+                    if (novoSaldoSync != syncBalanceValue) {
+                        syncBalanceValue = novoSaldoSync
+                        updateSyncBalance()
+                    }
+                    if (novoSaldoAsync != asyncBalanceValue) {
+                        asyncBalanceValue = novoSaldoAsync
+                        updateAsyncBalance()
+                    }
+
+                    // Buscar transações recebidas e notificar
+                    val transacoesRecebidas = transactionService.getReceivedTransactions()
+                    val transacaoMaisRecente = transacoesRecebidas.maxByOrNull { it.dataCriacao }
+                    if (transacaoMaisRecente != null && transacaoMaisRecente.valor == asyncBalanceValue) {
+                        val mensagem = "Método: ${transacaoMaisRecente.metodoConexao}\n" +
+                                       "Recebido de ID: ${transacaoMaisRecente.idUsuarioOrigem}\n" +
+                                       "Valor: R$ %.2f".format(transacaoMaisRecente.valor) +
+                                       if (!transacaoMaisRecente.descricao.isNullOrBlank()) "\nDescrição: ${transacaoMaisRecente.descricao}" else ""
+                        ShowNotification.show(
+                            this@HomeActivity,
+                            ShowNotification.Type.TRANSACTION_RECEIVED,
+                            transacaoMaisRecente.valor,
+                            mensagem
+                        )
+                    }
                 } else {
                     binding.tvSyncBalance.text = "••••••••"
                     binding.tvAsyncBalance.text = "••••••••"
@@ -338,6 +356,38 @@ class HomeActivity : AppCompatActivity() {
         }
     }
 
+    private fun carregarDadosUsuario() {
+        val userService = RetrofitClient.getInstance(this).create(UserService::class.java)
+
+        lifecycleScope.launch {
+            try {
+                val usuario = userService.getMe()
+                if (usuario != null) {
+                    binding.tvWelcome.text = "Bem-vindo, ${usuario.nome} ${usuario.sobrenome}"
+                    syncBalanceValue = usuario.contaSincrona?.saldo ?: 0.0
+                    asyncBalanceValue = usuario.contaAssincrona?.saldo ?: 0.0
+
+                    // Atualizar os saldos com base na visibilidade
+                    updateSyncBalance()
+                    updateAsyncBalance()
+                } else {
+                    binding.tvSyncBalance.text = "••••••••"
+                    binding.tvAsyncBalance.text = "••••••••"
+                }
+            } catch (e: Exception) {
+                Log.e("HomeActivity", "Erro ao buscar dados do usuário: ${e.message}")
+                ShowNotification.show(
+                    this@HomeActivity,
+                    ShowNotification.Type.GENERIC,
+                    0.0,
+                    "Erro ao carregar dados do usuário: ${e.message}"
+                )
+            }
+        }
+    }
+
+    // Comentando o fluxo de notificações
+    /*
     private fun checarTransacoesRecebidasENotificar() {
         val prefs = getSharedPreferences("notificacoes", MODE_PRIVATE)
         val idsNotificados = prefs.getStringSet("ids_transacoes_recebidas", emptySet())?.toMutableSet() ?: mutableSetOf()
@@ -360,27 +410,12 @@ class HomeActivity : AppCompatActivity() {
             }
         }
     }
+    */
 
     override fun onResume() {
         super.onResume()
-        carregarSaldosUsuario() 
-        checarTransacoesRecebidasENotificar()
-        
-        val pendentes = NotificationQueue.getAndClearAll()
-        Log.d("HomeActivity", "Notificacoes pendentes para exibir: $pendentes")
-        pendentes.forEach { transacao ->
-            val descricao = if (!transacao.descricao.isNullOrBlank()) "\nDescrição: ${transacao.descricao}" else ""
-            val mensagem = "Método: ${transacao.metodoConexao}\n" +
-                           "Recebido de ID: ${transacao.idUsuarioOrigem}\n" +
-                           "Valor: R$ %.2f".format(transacao.valor) +
-                           descricao
-            ShowNotification.show(
-                this,
-                ShowNotification.Type.TRANSACTION_RECEIVED,
-                transacao.valor,
-                mensagem
-            )
-        }
+        carregarDadosUsuario()
+        // checarTransacoesRecebidasENotificar() // Comentado para evitar problemas
     }
 
     private fun atualizarSaldoAssincrono() {
@@ -399,6 +434,34 @@ class HomeActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 
             }
+        }
+    }
+
+    private fun setupSyncButton() {
+        binding.btnSyncAccounts.setOnClickListener {
+            syncManager.sincronizarMinhaConta(
+                lifecycleScope,
+                onSuccess = { ShowNotification.show(this, ShowNotification.Type.GENERIC, 0.0, "Conta sincronizada") },
+                onError = { msg -> ShowNotification.show(this, ShowNotification.Type.GENERIC, 0.0, msg) }
+            )
+        }
+    }
+
+    private fun setupAutoTransactionSync() {
+        this.connectionMonitor.onConnected = {
+            transactionManager.sincronizarTransacoesOffline(
+                context = this,
+                scope = lifecycleScope,
+                buscarIdUsuarioPorEmail = ::buscarIdUsuarioPorEmail,
+                onResult = { sucesso, erro ->
+                    ShowNotification.show(
+                        this,
+                        ShowNotification.Type.GENERIC,
+                        0.0,
+                        "Transações sincronizadas: $sucesso sucesso(s), $erro erro(s)."
+                    )
+                }
+            )
         }
     }
 }

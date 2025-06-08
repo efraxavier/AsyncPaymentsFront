@@ -1,15 +1,41 @@
-*.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+# Ignore arquivos gerados pelo sistema de build
+.gradle/
+build/
 local.properties
+*.iml
+
+# Ignore arquivos de configuração do Android Studio
+.idea/
+*.ipr
+*.iws
+*.bak
+*.tmp
+*.swp
+*.lock
+
+# Ignore documentações e arquivos de texto
+*.md
+*.txt
+*.json
+
+# Ignore credenciais e configurações sensíveis
+src/main/res/raw/async.json
+src/main/java/com/example/asyncpayments/utils/Constants.kt
+
+# Ignore arquivos de log
+*.log
+
+# Ignore arquivos temporários do sistema operacional
+.DS_Store
+Thumbs.db
+
+# Ignore arquivos de cache
+*.cache
+*.class
+*.jar
+*.war
+*.ear
+
+# Ignore arquivos de teste
+src/androidTest/
+src/test/
