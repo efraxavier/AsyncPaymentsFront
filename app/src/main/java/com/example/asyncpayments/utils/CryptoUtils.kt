@@ -6,7 +6,7 @@ import javax.crypto.spec.SecretKeySpec
 
 object CryptoUtils {
     private const val ALGORITHM = "AES"
-    private const val KEY = "1234567890123456" // Chave de 16 bytes (exemplo)
+    private const val KEY = "1234567890123456" 
 
     fun encrypt(data: ByteArray): ByteArray {
         val key: Key = SecretKeySpec(KEY.toByteArray(), ALGORITHM)

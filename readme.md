@@ -94,6 +94,66 @@ O app espera um backend REST rodando em `http://10.0.2.2:8080/` (localhost para 
 - `POST /sincronizacao/manual` - Sincronizar todas as contas.
 - `POST /sincronizacao/manual/{id}` - Sincronizar uma conta específica.
 
+---
+
+## Novos Endpoints
+
+### **Buscar Transação por ID**
+- **URL:** `GET /transacoes/{id}`
+- **Descrição:** Busca uma transação pelo ID e retorna os dados da transação junto com o status atual.
+- **Retorno:**
+  - **200 OK:** Retorna um JSON contendo a transação e o status.
+    ```json
+    {
+      "transacao": {
+        "id": 123,
+        "idUsuarioOrigem": 1,
+        "idUsuarioDestino": 2,
+        "valor": 500.0,
+        "descricao": "Transferência entre contas",
+        "sincronizada": true
+      },
+      "status": "SINCRONIZADA"
+    }
+    ```
+  - **404 Not Found:** Retorna uma mensagem indicando que a transação não foi encontrada.
+    ```json
+    {
+      "message": "Transação não encontrada."
+    }
+    ```
+
+### **Consultar Status da Transação**
+- **URL:** `GET /transacoes/{id}/status`
+- **Descrição:** Consulta o status atual de uma transação pelo ID.
+- **Retorno:**
+  - **200 OK:** Retorna o status da transação em formato de texto.
+    ```
+    Status da transação 123: SINCRONIZADA
+    ```
+  - **404 Not Found:** Retorna uma mensagem indicando que a transação não foi encontrada.
+    ```
+    Transação não encontrada.
+    ```
+
+---
+
+## Alterações no Sistema
+
+### **Rollback de Transações**
+- Implementado fluxo de rollback para transações que excedem o prazo de 72 horas sem sincronização.
+- Atualiza o campo `descricao` da transação com a mensagem: `"Rollback: Transação não sincronizada em 72h."`.
+- Marca o status da transação como `ROLLBACK` e bloqueia as contas envolvidas.
+
+### **Enum StatusTransacao**
+- Criado para gerenciar os estados das transações:
+  - `PENDENTE`: Transação aguardando processamento.
+  - `SINCRONIZADA`: Transação sincronizada com sucesso.
+  - `ROLLBACK`: Transação revertida devido a falha ou atraso.
+  - `ERRO`: Transação com erro durante o processamento.
+
+---
+
 ## Como rodar
 
 1. **Clone o repositório**

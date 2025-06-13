@@ -8,14 +8,20 @@ interface UserService {
     suspend fun listarUsuarios(): List<UserResponse>
 
     @GET("usuarios/me")
-    suspend fun getMe(): UserResponse
+    suspend fun buscarMeuUsuario(): UserResponse
+
+    @PUT("usuarios/me")
+    suspend fun atualizarMeuUsuario(@Body user: UserResponse): UserResponse
+
+    @DELETE("usuarios/me")
+    suspend fun excluirMeuUsuario()
 
     @GET("usuarios/{id}")
-    suspend fun getById(@Path("id") id: Long): UserResponse
+    suspend fun buscarUsuarioPorId(@Path("id") id: Long): UserResponse
 
     @PUT("usuarios/{id}")
     suspend fun atualizarUsuario(@Path("id") id: Long, @Body user: UserResponse): UserResponse
 
     @DELETE("usuarios/{id}")
-    suspend fun deletarUsuario(@Path("id") id: Long)
+    suspend fun excluirUsuario(@Path("id") id: Long)
 }

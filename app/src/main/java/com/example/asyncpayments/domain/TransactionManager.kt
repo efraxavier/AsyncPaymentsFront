@@ -31,10 +31,12 @@ class TransactionManager(
                     val idOrigem = buscarIdUsuarioPorEmail(transacao.origem)
                     val idDestino = buscarIdUsuarioPorEmail(transacao.destino)
                     if (idOrigem != null && idDestino != null) {
+                        val tipoOperacao = if (transacao.metodoConexao == "INTERNET") "SINCRONA" else "ASSINCRONA"
                         val request = TransactionRequest(
                             idUsuarioOrigem = idOrigem,
                             idUsuarioDestino = idDestino,
                             valor = transacao.valor,
+                            tipoOperacao = tipoOperacao,
                             metodoConexao = transacao.metodoConexao,
                             gatewayPagamento = transacao.gatewayPagamento,
                             descricao = transacao.descricao

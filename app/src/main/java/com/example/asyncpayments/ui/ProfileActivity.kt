@@ -65,6 +65,7 @@ class ProfileActivity : AppCompatActivity() {
             dialogBinding.btnDialogOk.setOnClickListener {
                 
                 SharedPreferencesHelper(this).clearToken()
+                Log.d("ProfileActivity", "Token limpo no logout")
                 val intent = Intent(this, LoginActivity::class.java)
                 intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                 startActivity(intent)
@@ -80,15 +81,10 @@ class ProfileActivity : AppCompatActivity() {
     }
 
     private fun carregarPerfil() {
-        val token = SharedPreferencesHelper(this).getToken()
-        Log.d("ProfileActivity", "Token: $token")
-
         val userService = RetrofitClient.getInstance(this).create(UserService::class.java)
-
         lifecycleScope.launch {
             try {
-                val usuario = userService.getMe()
-                Log.d("ProfileActivity", "Usuário: $usuario")
+                val usuario = userService.buscarMeuUsuario() 
                 if (usuario != null) {
                     binding.tvProfileEmail.text = "Email: ${usuario.email}"
                     binding.tvProfileName.text = "Nome: ${usuario.nome} ${usuario.sobrenome}"
@@ -116,16 +112,6 @@ class ProfileActivity : AppCompatActivity() {
                 Log.e("ProfileActivity", "Erro ao carregar perfil: ${e.message}")
                 exibirErro()
             }
-        }
-    }
-
-    private fun getEmailFromToken(token: String): String? {
-        return try {
-            val payload = Base64.decode(token.split(".")[1], Base64.DEFAULT)
-            val json = JSONObject(String(payload))
-            json.getString("sub")
-        } catch (e: Exception) {
-            null
         }
     }
 
@@ -178,5 +164,17 @@ class ProfileActivity : AppCompatActivity() {
         binding.tvProfileRole.text = "Erro ao carregar perfil"
         binding.tvProfileStatus.text = "Erro ao carregar status"
         binding.tvProfileSyncDate.text = "Erro ao carregar sincronização"
+    }
+
+    private fun debugToken() {
+        val token = SharedPreferencesHelper(this).getToken()
+        Log.d("HomeActivity", "Token atual: $token")
+        if (token != null) {
+            val parts = token.split(".")
+            if (parts.size > 1) {
+                val payload = String(android.util.Base64.decode(parts[1], android.util.Base64.DEFAULT))
+                Log.d("HomeActivity", "Payload do token: $payload")
+            }
+        }
     }
 }

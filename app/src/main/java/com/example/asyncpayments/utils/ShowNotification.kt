@@ -24,29 +24,33 @@ object ShowNotification {
         valor: Double = 0.0,
         extra: String = ""
     ) {
-        // Verifica se o contexto é uma atividade e se ela está ativa
+        
         if (context is android.app.Activity && (context.isFinishing || context.isDestroyed)) {
             return
         }
 
         val (title, message) = when (type) {
             Type.TRANSACTION_RECEIVED -> "Transação recebida" to extra
-            else -> "Aviso" to extra
+            Type.TRANSACTION_SENT -> "Transação enviada" to "Valor: R$ %.2f".format(valor)
+            Type.LOGIN_SUCCESS -> "Login realizado" to extra
+            Type.LOGIN_ERROR -> "Erro de login" to extra
+            Type.REGISTER_SUCCESS -> "Cadastro realizado" to extra
+            Type.REGISTER_ERROR -> "Erro de cadastro" to extra
+            Type.SYNC_SUCCESS -> "Sincronização concluída" to extra
+            Type.SYNC_ERROR -> "Erro de sincronização" to extra
+            Type.GENERIC -> "Aviso" to extra
         }
 
         val dialogBinding = DialogResponseBinding.inflate(LayoutInflater.from(context))
         dialogBinding.tvDialogTitle.text = title
         dialogBinding.tvDialogMessage.text = message
 
-        // Cria e exibe o diálogo
+        
         val dialog = AlertDialog.Builder(context)
             .setView(dialogBinding.root)
             .setCancelable(true)
             .create()
 
-        // Adiciona uma verificação para garantir que o diálogo seja descartado corretamente
-        if (context is android.app.Activity && !context.isFinishing && !context.isDestroyed) {
-            dialog.show()
-        }
+        dialog.show()
     }
 }

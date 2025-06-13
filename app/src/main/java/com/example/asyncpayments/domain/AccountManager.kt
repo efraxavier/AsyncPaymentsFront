@@ -10,7 +10,7 @@ class AccountManager(
     fun carregarSaldos(scope: CoroutineScope, onResult: (Double, Double) -> Unit, onError: (String) -> Unit) {
         scope.launch {
             try {
-                val usuario = userService.getMe()
+                val usuario = userService.buscarMeuUsuario() 
                 val sync = usuario?.contaSincrona?.saldo ?: 0.0
                 val async = usuario?.contaAssincrona?.saldo ?: 0.0
                 onResult(sync, async)

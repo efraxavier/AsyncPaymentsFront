@@ -147,20 +147,25 @@ class RegisterActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             try {
-                authService.register(registerRequest)
+                authService.registrar(registerRequest)
                 exibirDialogoLGPD()
             } catch (e: Exception) {
-                val msg = e.message ?: ""
-                val userMsg = when {
-                    msg.contains("cpf") && msg.contains("já existe", ignoreCase = true) -> "Já existe um cadastro com este CPF."
-                    msg.contains("email") && msg.contains("já existe", ignoreCase = true) -> "Já existe um cadastro com este e-mail."
-                    else -> "Erro ao cadastrar: ${msg.lineSequence().firstOrNull { it.contains("Erro interno") }?.substringAfter("Erro interno: ") ?: msg}"
+                val msg = when {
+                    e.message?.contains("409") == true || e.message?.contains("CONFLICT") == true -> {
+                        "E-mail já cadastrado."
+                    }
+                    e.message?.contains("401") == true || e.message?.contains("UNAUTHORIZED") == true -> {
+                        "Usuário ou senha inválidos."
+                    }
+                    else -> {
+                        e.message ?: "Erro desconhecido"
+                    }
                 }
                 ShowNotification.show(
                     this@RegisterActivity,
-                    ShowNotification.Type.REGISTER_ERROR,
+                    ShowNotification.Type.GENERIC,
                     0.0,
-                    userMsg
+                    msg
                 )
             }
         }
