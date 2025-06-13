@@ -7,7 +7,7 @@ import retrofit2.http.Path
 interface SyncService {
     @POST("sincronizacao/manual")
     suspend fun sincronizarTodas(): ResponseBody
-    
+
     @POST("sincronizacao/me")
     suspend fun sincronizarMinhaConta(): ResponseBody
 

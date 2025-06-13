@@ -2,6 +2,7 @@ package com.example.asyncpayments.ui
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Base64
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.asyncpayments.databinding.ActivityLoginBinding
@@ -11,6 +12,7 @@ import com.example.asyncpayments.network.RetrofitClient
 import com.example.asyncpayments.utils.SharedPreferencesHelper
 import com.example.asyncpayments.utils.ShowNotification
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 
 class LoginActivity : AppCompatActivity() {
 
@@ -58,6 +60,14 @@ class LoginActivity : AppCompatActivity() {
             try {
                 val response = authService.login(authRequest)
                 SharedPreferencesHelper(this@LoginActivity).saveToken(response.token)
+                val parts = response.token.split(".")
+                if (parts.size > 1) {
+                    val payload = String(Base64.decode(parts[1], Base64.DEFAULT))
+                    try {
+                        val json = JSONObject(payload)
+                    } catch (e: Exception) {
+                    }
+                }
                 showNotificationSafe(ShowNotification.Type.LOGIN_SUCCESS)
                 startActivity(Intent(this@LoginActivity, HomeActivity::class.java))
                 finish()

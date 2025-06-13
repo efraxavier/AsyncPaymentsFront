@@ -3,7 +3,7 @@
 .gradle/
 local.properties
 /.idea/
-/.idea/*
+.idea/*
 !.idea/codeStyles
 .DS_Store
 /build/
@@ -25,19 +25,37 @@ local.properties
 *.keystore
 *.jks
 *.kotlin_module
+
 # VS Code
 .vscode/
+
 # OS
 Thumbs.db
 ehthumbs.db
+
 # Test/coverage
 *.ec
 *.coverage
 *.lcov
+
 # Misc
 *.zip
 *.tar.gz
 *.7z
 *.rar
+
 # Ignore generated docs and diagrams
 /docs/*.drawio.xml
+
+# Android Studio Navigation Editor temp files
+.navigation/
+
+# Mac OS
+__MACOSX/
+
+# Windows thumbnail cache files
+Desktop.ini
+
+# Ignore generated binding and build folders
+build/
+generated/

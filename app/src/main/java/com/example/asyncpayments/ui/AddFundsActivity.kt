@@ -9,6 +9,7 @@ import com.example.asyncpayments.network.RetrofitClient
 import com.example.asyncpayments.network.TransactionService
 import com.example.asyncpayments.utils.SharedPreferencesHelper
 import com.example.asyncpayments.utils.ShowNotification
+import com.example.asyncpayments.utils.TokenUtils
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import android.util.Base64
@@ -24,7 +25,7 @@ class AddFundsActivity : AppCompatActivity() {
 
         binding.btnAddFunds.setOnClickListener {
             val valor = binding.etAddFundsValue.text.toString().toDoubleOrNull()
-            val userId = getUserIdFromToken()
+            val userId = TokenUtils.getUserIdFromToken(this)
             if (valor != null && userId != null) {
                 addFunds(userId, valor)
             } else {
@@ -68,9 +69,10 @@ class AddFundsActivity : AppCompatActivity() {
                     idUsuarioOrigem = userId,
                     idUsuarioDestino = userId,
                     valor = valor,
+                    tipoOperacao = "INTERNA",
                     metodoConexao = "ASYNC",
                     gatewayPagamento = "INTERNO",
-                    descricao = "Adição de fundos à conta assíncrona"
+                    descricao = "Adição de fundos à conta assincrona"
                 )
                 val apiResponse = service.sendTransaction(request)
                 val mensagem = "Fundos adicionados com sucesso!\n" +
@@ -98,29 +100,6 @@ class AddFundsActivity : AppCompatActivity() {
                     "Erro ao adicionar fundos: ${e.message}"
                 )
             }
-        }
-    }
-
-    private fun getUserIdFromToken(): Long? {
-        val token = SharedPreferencesHelper(this).getToken() ?: return null
-        return try {
-            val payload = Base64.decode(token.split(".")[1], Base64.DEFAULT)
-            val json = JSONObject(String(payload))
-            json.getLong("id")
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    private fun isTokenExpired(token: String): Boolean {
-        return try {
-            val payload = Base64.decode(token.split(".")[1], Base64.DEFAULT)
-            val json = JSONObject(String(payload))
-            val exp = json.getLong("exp")
-            val currentTime = System.currentTimeMillis() / 1000
-            currentTime > exp
-        } catch (e: Exception) {
-            true
         }
     }
 }

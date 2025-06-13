@@ -11,16 +11,14 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.asyncpayments.R
 import com.example.asyncpayments.databinding.ActivityTransactionBinding
-import com.example.asyncpayments.domain.TransactionUseCase
-import com.example.asyncpayments.model.PaymentData
 import com.example.asyncpayments.model.TransactionRequest
 import com.example.asyncpayments.model.UserResponse
 import com.example.asyncpayments.network.RetrofitClient
 import com.example.asyncpayments.network.TransactionService
 import com.example.asyncpayments.network.UserService
-import com.example.asyncpayments.utils.OfflineTransactionQueue
 import com.example.asyncpayments.utils.SharedPreferencesHelper
 import com.example.asyncpayments.utils.ShowNotification
+import com.example.asyncpayments.utils.TokenUtils
 import com.example.asyncpayments.utils.isOnline
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.launch
@@ -51,14 +49,17 @@ class TransactionActivity : AppCompatActivity() {
         "Descrição (opcional)"
     )
 
+    private lateinit var transactionService: TransactionService
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityTransactionBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        userIdOrigem = getUserIdFromToken()
-        carregarUsuarios()
+        transactionService = RetrofitClient.getInstance(this).create(TransactionService::class.java)
 
+        userIdOrigem = TokenUtils.getUserIdFromToken(this)
+        carregarUsuarios()
         setupStepUI()
 
         binding.btnNext.setOnClickListener {
@@ -251,57 +252,50 @@ class TransactionActivity : AppCompatActivity() {
     }
 
     private fun enviarTransacao() {
-        if (userIdOrigem == null || idUsuarioDestino == null || valor == null || metodoConexao.isNullOrBlank() || gatewayPagamento.isNullOrBlank()) {
-            ShowNotification.show(this, ShowNotification.Type.GENERIC, 0.0, "Preencha todos os campos obrigatórios")
-            return
-        }
+        val tipoOperacao = if (metodoConexao == "INTERNET") "SINCRONA" else "ASSINCRONA"
         val request = TransactionRequest(
             idUsuarioOrigem = userIdOrigem!!,
             idUsuarioDestino = idUsuarioDestino!!,
             valor = valor!!,
+            tipoOperacao = tipoOperacao,
             metodoConexao = metodoConexao!!,
             gatewayPagamento = gatewayPagamento!!,
             descricao = descricao
         )
-        val transactionUseCase = TransactionUseCase(
-            RetrofitClient.getInstance(this).create(TransactionService::class.java),
-            OfflineTransactionQueue
-        )
+
         lifecycleScope.launch {
             try {
-                if (metodoConexao == "INTERNET") {
-                    val apiResponse = transactionUseCase.sendTransactionOnline(request)
-                    ShowNotification.show(
-                        this@TransactionActivity,
-                        ShowNotification.Type.TRANSACTION_SENT,
-                        apiResponse.valor,
-                        "Transação realizada com sucesso!"
-                    )
-                } else {
-                    val paymentData = PaymentData(
-                        id = System.currentTimeMillis(),
-                        valor = valor!!,
-                        origem = "emailOrigem",
-                        destino = "emailDestino",
-                        data = System.currentTimeMillis().toString(),
-                        metodoConexao = metodoConexao!!,
-                        gatewayPagamento = gatewayPagamento!!,
-                        descricao = descricao
-                    )
-                    transactionUseCase.saveTransactionOffline(this@TransactionActivity, paymentData)
-                    ShowNotification.show(
-                        this@TransactionActivity,
-                        ShowNotification.Type.TRANSACTION_SENT,
-                        valor!!,
-                        "Transação offline salva com sucesso!"
-                    )
-                }
+                val response = transactionService.sendTransaction(request)
+                // Exibe comprovante detalhado
+                val comprovante = """
+                    Comprovante de Transação
+                    -------------------------------
+                    ID: ${response.id}
+                    Valor: R$ %.2f
+                    Status: ${response.status}
+                    Método: ${response.metodoConexao}
+                    Gateway: ${response.gatewayPagamento}
+                    Tipo: ${response.tipoOperacao}
+                    Data: ${response.dataCriacao}
+                    Destinatário: ${response.nomeUsuarioDestino} (${response.emailUsuarioDestino})
+                    Descrição: ${response.descricao ?: "--"}
+                """.trimIndent().format(response.valor)
+
+                MaterialAlertDialogBuilder(this@TransactionActivity)
+                    .setTitle("Transação enviada com sucesso!")
+                    .setMessage(comprovante)
+                    .setPositiveButton("OK") { _, _ ->
+                        startActivity(Intent(this@TransactionActivity, HomeActivity::class.java))
+                        finish()
+                    }
+                    .setCancelable(false)
+                    .show()
             } catch (e: Exception) {
                 ShowNotification.show(
                     this@TransactionActivity,
                     ShowNotification.Type.GENERIC,
                     0.0,
-                    "Erro ao realizar transação: ${e.message}"
+                    "Erro ao enviar transação: ${e.message}"
                 )
             }
         }
@@ -325,22 +319,11 @@ class TransactionActivity : AppCompatActivity() {
                 emptyList()
             }
 
-            val userIdOrigem = getUserIdFromToken()
+            val userIdOrigem = TokenUtils.getUserIdFromToken(this@TransactionActivity)
             usuarios = usuarios?.filter { it.id != userIdOrigem }
             Log.d("TransactionActivity", "Usuários filtrados: $usuarios")
 
             if (step == 0) setupStepUI()
-        }
-    }
-
-    private fun getUserIdFromToken(): Long? {
-        val token = SharedPreferencesHelper(this).getToken() ?: return null
-        return try {
-            val payload = Base64.decode(token.split(".")[1], Base64.DEFAULT)
-            val json = JSONObject(String(payload))
-            json.getLong("id")
-        } catch (e: Exception) {
-            null
         }
     }
 }

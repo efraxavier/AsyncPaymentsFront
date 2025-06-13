@@ -1,7 +1,7 @@
 {
   "_type": "export",
   "__export_format": 4,
-  "__export_date": "2025-06-06T00:00:00.000Z",
+  "__export_date": "2025-06-11T00:00:00.000Z",
   "__export_source": "insomnia.desktop.app:v2024.2.0",
   "resources": [
     {
@@ -61,13 +61,21 @@
       "name": "Registrar",
       "method": "POST",
       "url": "{{ base_url }}/auth/register",
-      "headers": [
-        { "name": "Content-Type", "value": "application/json" }
-      ],
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
       "body": {
         "mimeType": "application/json",
-        "text": "{\n  \"email\": \"admin@email.com\",\n  \"password\": \"123456\",\n  \"cpf\": \"12345678900\",\n  \"nome\": \"Admin\",\n  \"sobrenome\": \"User\",\n  \"celular\": \"11999999999\",\n  \"role\": \"ADMIN\",\n  \"consentimentoDados\": true\n}"
+        "text": "{\n  \"email\": \"user@email.com\",\n  \"password\": \"123456\",\n  \"cpf\": \"12345678900\",\n  \"nome\": \"Nome\",\n  \"sobrenome\": \"Sobrenome\",\n  \"celular\": \"11999999999\",\n  \"role\": \"USER\",\n  \"consentimentoDados\": true\n}"
       },
+      "responses": [
+        {
+          "statusCode": 200,
+          "body": "{\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n}"
+        },
+        {
+          "statusCode": 409,
+          "body": "{\n  \"error\": \"E-mail já cadastrado.\"\n}"
+        }
+      ],
       "_type": "request"
     },
     {
@@ -76,13 +84,21 @@
       "name": "Login",
       "method": "POST",
       "url": "{{ base_url }}/auth/login",
-      "headers": [
-        { "name": "Content-Type", "value": "application/json" }
-      ],
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
       "body": {
         "mimeType": "application/json",
-        "text": "{\n  \"email\": \"admin@email.com\",\n  \"password\": \"123456\"\n}"
+        "text": "{\n  \"email\": \"user@email.com\",\n  \"password\": \"123456\"\n}"
       },
+      "responses": [
+        {
+          "statusCode": 200,
+          "body": "{\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n}"
+        },
+        {
+          "statusCode": 401,
+          "body": "{\n  \"error\": \"Credenciais inválidas.\"\n}"
+        }
+      ],
       "_type": "request"
     },
     {
@@ -98,6 +114,12 @@
         "type": "bearer",
         "token": "{{ bearer_token }}"
       },
+      "responses": [
+        {
+          "statusCode": 200,
+          "body": "{\n  \"id\": 1\n}"
+        }
+      ],
       "_type": "request"
     },
     {
@@ -105,14 +127,19 @@
       "parentId": "fld_auth",
       "name": "Buscar ID por Email",
       "method": "GET",
-      "url": "{{ base_url }}/auth/user/id?email=admin@email.com",
-      "headers": [
-        { "name": "Content-Type", "value": "application/json" }
+      "url": "{{ base_url }}/auth/user/id?email=user@email.com",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "authentication": { "type": "bearer", "token": "{{ bearer_token }}" },
+      "responses": [
+        {
+          "statusCode": 200,
+          "body": "{\n  \"id\": 1\n}"
+        },
+        {
+          "statusCode": 404,
+          "body": "{\n  \"error\": \"Usuário não encontrado.\"\n}"
+        }
       ],
-      "authentication": {
-        "type": "bearer",
-        "token": "{{ bearer_token }}"
-      },
       "_type": "request"
     },
     {
@@ -128,6 +155,12 @@
         "type": "bearer",
         "token": "{{ bearer_token }}"
       },
+      "responses": [
+        {
+          "statusCode": 200,
+          "body": "{\n  \"message\": \"Autenticado com sucesso.\"\n}"
+        }
+      ],
       "_type": "request"
     },
     {
@@ -136,62 +169,14 @@
       "name": "Listar Usuários",
       "method": "GET",
       "url": "{{ base_url }}/usuarios",
-      "headers": [
-        { "name": "Content-Type", "value": "application/json" }
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "authentication": { "type": "bearer", "token": "{{ bearer_token }}" },
+      "responses": [
+        {
+          "statusCode": 200,
+          "body": "[\n  {\n    \"id\": 1,\n    \"email\": \"user@email.com\",\n    \"cpf\": \"12345678900\",\n    \"nome\": \"Nome\",\n    \"sobrenome\": \"Sobrenome\",\n    \"celular\": \"11999999999\",\n    \"role\": \"USER\",\n    \"contaSincrona\": { \"id\": 1, \"saldo\": 100.0 },\n    \"contaAssincrona\": { \"id\": 2, \"saldo\": 10.0, \"bloqueada\": false, \"ultimaSincronizacao\": \"2025-06-12T02:22:42.348952Z\" },\n    \"consentimentoDados\": true\n  }\n]"
+        }
       ],
-      "authentication": {
-        "type": "bearer",
-        "token": "{{ bearer_token }}"
-      },
-      "_type": "request"
-    },
-    {
-      "_id": "req_usuarios_buscar_id",
-      "parentId": "fld_usuarios_admin",
-      "name": "Buscar Usuário por ID",
-      "method": "GET",
-      "url": "{{ base_url }}/usuarios/1",
-      "headers": [
-        { "name": "Content-Type", "value": "application/json" }
-      ],
-      "authentication": {
-        "type": "bearer",
-        "token": "{{ bearer_token }}"
-      },
-      "_type": "request"
-    },
-    {
-      "_id": "req_usuarios_atualizar",
-      "parentId": "fld_usuarios_admin",
-      "name": "Atualizar Usuário",
-      "method": "PUT",
-      "url": "{{ base_url }}/usuarios/1",
-      "headers": [
-        { "name": "Content-Type", "value": "application/json" }
-      ],
-      "body": {
-        "mimeType": "application/json",
-        "text": "{\n  \"email\": \"user@email.com\",\n  \"cpf\": \"12345678900\",\n  \"nome\": \"User\",\n  \"sobrenome\": \"Test\",\n  \"celular\": \"11999999999\"\n}"
-      },
-      "authentication": {
-        "type": "bearer",
-        "token": "{{ bearer_token }}"
-      },
-      "_type": "request"
-    },
-    {
-      "_id": "req_usuarios_deletar",
-      "parentId": "fld_usuarios_admin",
-      "name": "Deletar Usuário",
-      "method": "DELETE",
-      "url": "{{ base_url }}/usuarios/1",
-      "headers": [
-        { "name": "Content-Type", "value": "application/json" }
-      ],
-      "authentication": {
-        "type": "bearer",
-        "token": "{{ bearer_token }}"
-      },
       "_type": "request"
     },
     {
@@ -200,58 +185,122 @@
       "name": "Buscar Meu Usuário",
       "method": "GET",
       "url": "{{ base_url }}/usuarios/me",
-      "headers": [
-        { "name": "Content-Type", "value": "application/json" }
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "authentication": { "type": "bearer", "token": "{{ bearer_token }}" },
+      "responses": [
+        {
+          "statusCode": 200,
+          "body": "{\n  \"id\": 1,\n  \"email\": \"user@email.com\",\n  \"cpf\": \"12345678900\",\n  \"nome\": \"Nome\",\n  \"sobrenome\": \"Sobrenome\",\n  \"celular\": \"11999999999\",\n  \"role\": \"USER\",\n  \"contaSincrona\": { \"id\": 1, \"saldo\": 100.0 },\n  \"contaAssincrona\": { \"id\": 2, \"saldo\": 10.0, \"bloqueada\": false, \"ultimaSincronizacao\": \"2025-06-12T02:22:42.348952Z\" },\n  \"consentimentoDados\": true\n}"
+        }
       ],
-      "authentication": {
-        "type": "bearer",
-        "token": "{{ bearer_token }}"
-      },
       "_type": "request"
     },
     {
-      "_id": "req_usuarios_aceitar_kyc",
+      "_id": "req_usuarios_atualizar_me",
       "parentId": "fld_usuarios_user",
-      "name": "Aceitar KYC",
-      "method": "POST",
-      "url": "{{ base_url }}/usuarios/me/aceitar-kyc",
-      "headers": [
-        { "name": "Content-Type", "value": "application/json" }
-      ],
-      "authentication": {
-        "type": "bearer",
-        "token": "{{ bearer_token }}"
+      "name": "Atualizar Meu Usuário",
+      "method": "PUT",
+      "url": "{{ base_url }}/usuarios/me",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"user@email.com\",\n  \"cpf\": \"12345678900\",\n  \"nome\": \"Nome\",\n  \"sobrenome\": \"Sobrenome\",\n  \"celular\": \"11999999999\"\n}"
       },
+      "authentication": { "type": "bearer", "token": "{{ bearer_token }}" },
+      "responses": [
+        {
+          "statusCode": 200,
+          "body": "{\n  \"message\": \"Usuário atualizado com sucesso.\"\n}"
+        }
+      ],
       "_type": "request"
     },
     {
-      "_id": "req_usuarios_anonimizar",
+      "_id": "req_usuarios_deletar_me",
       "parentId": "fld_usuarios_user",
-      "name": "Anonimizar Dados",
-      "method": "POST",
-      "url": "{{ base_url }}/usuarios/me/anonimizar",
-      "headers": [
-        { "name": "Content-Type", "value": "application/json" }
+      "name": "Excluir Meu Usuário",
+      "method": "DELETE",
+      "url": "{{ base_url }}/usuarios/me",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "authentication": { "type": "bearer", "token": "{{ bearer_token }}" },
+      "responses": [
+        {
+          "statusCode": 200,
+          "body": "{\n  \"message\": \"Usuário excluído com sucesso.\"\n}"
+        }
       ],
-      "authentication": {
-        "type": "bearer",
-        "token": "{{ bearer_token }}"
+      "_type": "request"
+    },
+    {
+      "_id": "req_usuarios_buscar_id",
+      "parentId": "fld_usuarios_admin",
+      "name": "Buscar Usuário por ID",
+      "method": "GET",
+      "url": "{{ base_url }}/usuarios/1",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "authentication": { "type": "bearer", "token": "{{ bearer_token }}" },
+      "responses": [
+        {
+          "statusCode": 200,
+          "body": "{\n  \"id\": 1,\n  \"email\": \"user@email.com\",\n  \"cpf\": \"12345678900\",\n  \"nome\": \"Nome\",\n  \"sobrenome\": \"Sobrenome\",\n  \"celular\": \"11999999999\",\n  \"role\": \"USER\",\n  \"contaSincrona\": { \"id\": 1, \"saldo\": 100.0 },\n  \"contaAssincrona\": { \"id\": 2, \"saldo\": 10.0, \"bloqueada\": false, \"ultimaSincronizacao\": \"2025-06-12T02:22:42.348952Z\" },\n  \"consentimentoDados\": true\n}"
+        },
+        {
+          "statusCode": 404,
+          "body": "{\n  \"error\": \"Usuário não encontrado.\"\n}"
+        }
+      ],
+      "_type": "request"
+    },
+    {
+      "_id": "req_usuarios_atualizar",
+      "parentId": "fld_usuarios_admin",
+      "name": "Atualizar Usuário",
+      "method": "PUT",
+      "url": "{{ base_url }}/usuarios/1",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"user@email.com\",\n  \"cpf\": \"12345678900\",\n  \"nome\": \"User\",\n  \"sobrenome\": \"Test\",\n  \"celular\": \"11999999999\"\n}"
       },
+      "authentication": { "type": "bearer", "token": "{{ bearer_token }}" },
+      "responses": [
+        {
+          "statusCode": 200,
+          "body": "{\n  \"message\": \"Usuário atualizado com sucesso.\"\n}"
+        }
+      ],
+      "_type": "request"
+    },
+    {
+      "_id": "req_usuarios_deletar",
+      "parentId": "fld_usuarios_admin",
+      "name": "Deletar Usuário",
+      "method": "DELETE",
+      "url": "{{ base_url }}/usuarios/1",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "authentication": { "type": "bearer", "token": "{{ bearer_token }}" },
+      "responses": [
+        {
+          "statusCode": 200,
+          "body": "{\n  \"message\": \"Usuário excluído com sucesso.\"\n}"
+        }
+      ],
       "_type": "request"
     },
     {
       "_id": "req_transacoes_listar",
       "parentId": "fld_transacoes_admin",
-      "name": "Listar Transações",
+      "name": "Listar Transações (com filtros)",
       "method": "GET",
-      "url": "{{ base_url }}/transacoes",
-      "headers": [
-        { "name": "Content-Type", "value": "application/json" }
+      "url": "{{ base_url }}/transacoes?status=SINCRONIZADA&idUsuarioOrigem=1&dataCriacaoInicio=2025-06-01&dataCriacaoFim=2025-06-12",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "authentication": { "type": "bearer", "token": "{{ bearer_token }}" },
+      "responses": [
+        {
+          "statusCode": 200,
+          "body": "[\n  {\n    \"id\": 1,\n    \"valor\": 1.0,\n    \"tipoOperacao\": \"SINCRONA\",\n    \"metodoConexao\": \"INTERNET\",\n    \"gatewayPagamento\": \"PAGARME\",\n    \"descricao\": \"Pagamento teste\",\n    \"dataCriacao\": \"2025-06-12T02:13:11.449621Z\",\n    \"dataAtualizacao\": \"2025-06-12T02:14:02.428693Z\",\n    \"sincronizada\": true,\n    \"status\": \"SINCRONIZADA\",\n    \"nomeUsuarioOrigem\": \"João\",\n    \"emailUsuarioOrigem\": \"joao@email.com\",\n    \"cpfUsuarioOrigem\": \"12345678900\",\n    \"nomeUsuarioDestino\": \"Maria\",\n    \"emailUsuarioDestino\": \"maria@email.com\",\n    \"cpfUsuarioDestino\": \"98765432100\",\n    \"dataSincronizacaoOrigem\": \"2025-06-12T02:13:11.449621Z\",\n    \"dataSincronizacaoDestino\": \"2025-06-12T02:14:02.428693Z\"\n  }\n]"
+        }
       ],
-      "authentication": {
-        "type": "bearer",
-        "token": "{{ bearer_token }}"
-      },
       "_type": "request"
     },
     {
@@ -260,13 +309,18 @@
       "name": "Buscar Transação por ID",
       "method": "GET",
       "url": "{{ base_url }}/transacoes/1",
-      "headers": [
-        { "name": "Content-Type", "value": "application/json" }
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "authentication": { "type": "bearer", "token": "{{ bearer_token }}" },
+      "responses": [
+        {
+          "statusCode": 200,
+          "body": "{\n  \"id\": 1,\n  \"valor\": 1.0,\n  \"tipoOperacao\": \"SINCRONA\",\n  \"metodoConexao\": \"INTERNET\",\n  \"gatewayPagamento\": \"PAGARME\",\n  \"descricao\": \"Pagamento teste\",\n  \"dataCriacao\": \"2025-06-12T02:13:11.449621Z\",\n  \"dataAtualizacao\": \"2025-06-12T02:14:02.428693Z\",\n  \"sincronizada\": true,\n  \"status\": \"SINCRONIZADA\",\n  \"nomeUsuarioOrigem\": \"João\",\n  \"emailUsuarioOrigem\": \"joao@email.com\",\n  \"cpfUsuarioOrigem\": \"12345678900\",\n  \"nomeUsuarioDestino\": \"Maria\",\n  \"emailUsuarioDestino\": \"maria@email.com\",\n  \"cpfUsuarioDestino\": \"98765432100\",\n  \"dataSincronizacaoOrigem\": \"2025-06-12T02:13:11.449621Z\",\n  \"dataSincronizacaoDestino\": \"2025-06-12T02:14:02.428693Z\"\n}"
+        },
+        {
+          "statusCode": 404,
+          "body": "{\n  \"error\": \"Transação não encontrada.\"\n}"
+        }
       ],
-      "authentication": {
-        "type": "bearer",
-        "token": "{{ bearer_token }}"
-      },
       "_type": "request"
     },
     {
@@ -275,17 +329,21 @@
       "name": "Criar Transação",
       "method": "POST",
       "url": "{{ base_url }}/transacoes",
-      "headers": [
-        { "name": "Content-Type", "value": "application/json" }
-      ],
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
       "body": {
         "mimeType": "application/json",
-        "text": "{\n  \"idUsuarioOrigem\": 1,\n  \"idUsuarioDestino\": 2,\n  \"valor\": 100.0,\n  \"gatewayPagamento\": \"PIX\",\n  \"metodoConexao\": \"API\"\n}"
+        "text": "{\n  \"idUsuarioOrigem\": 1,\n  \"idUsuarioDestino\": 2,\n  \"valor\": 100.0,\n  \"metodoConexao\": \"INTERNET\",\n  \"gatewayPagamento\": \"PAGARME\",\n  \"tipoOperacao\": \"SINCRONA\",\n  \"descricao\": \"Pagamento teste\"\n}"
       },
-      "authentication": {
-        "type": "bearer",
-        "token": "{{ bearer_token }}"
-      },
+      "responses": [
+        {
+          "statusCode": 200,
+          "body": "{\n  \"id\": 123,\n  \"valor\": 100.0,\n  \"tipoOperacao\": \"SINCRONA\",\n  \"metodoConexao\": \"INTERNET\",\n  \"gatewayPagamento\": \"PAGARME\",\n  \"descricao\": \"Pagamento teste\",\n  \"dataCriacao\": \"2025-06-12T02:13:11.449621Z\",\n  \"dataAtualizacao\": \"2025-06-12T02:14:02.428693Z\",\n  \"sincronizada\": true,\n  \"status\": \"SINCRONIZADA\",\n  \"nomeUsuarioOrigem\": \"João\",\n  \"emailUsuarioOrigem\": \"joao@email.com\",\n  \"cpfUsuarioOrigem\": \"12345678900\",\n  \"nomeUsuarioDestino\": \"Maria\",\n  \"emailUsuarioDestino\": \"maria@email.com\",\n  \"cpfUsuarioDestino\": \"98765432100\",\n  \"dataSincronizacaoOrigem\": \"2025-06-12T02:13:11.449621Z\",\n  \"dataSincronizacaoDestino\": \"2025-06-12T02:14:02.428693Z\"\n}"
+        },
+        {
+          "statusCode": 400,
+          "body": "{\n  \"error\": \"Saldo insuficiente.\"\n}"
+        }
+      ],
       "_type": "request"
     },
     {
@@ -294,17 +352,97 @@
       "name": "Adicionar Fundos",
       "method": "POST",
       "url": "{{ base_url }}/transacoes/adicionar-fundos",
-      "headers": [
-        { "name": "Content-Type", "value": "application/json" }
-      ],
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
       "body": {
         "mimeType": "application/json",
-        "text": "{\n  \"idUsuarioOrigem\": 20,\n  \"idUsuarioDestino\": 20,\n  \"valor\": 3.0,\n  \"metodoConexao\": \"ASYNC\",\n  \"gatewayPagamento\": \"INTERNO\",\n  \"descricao\": \"Adição de fundos à conta assíncrona\"\n}"
+        "text": "{\n  \"valor\": 10.0\n}"
       },
-      "authentication": {
-        "type": "bearer",
-        "token": "{{ bearer_token }}"
-      },
+      "responses": [
+        {
+          "statusCode": 200,
+          "body": "{\n  \"id\": 124,\n  \"valor\": 10.0,\n  \"tipoOperacao\": \"ASSINCRONA\",\n  \"metodoConexao\": \"ASYNC\",\n  \"gatewayPagamento\": \"INTERNO\",\n  \"descricao\": \"Adição de fundos da conta síncrona para assincrona\",\n  \"dataCriacao\": \"2025-06-12T02:22:42.348952Z\",\n  \"dataAtualizacao\": \"2025-06-12T02:23:31.537132Z\",\n  \"sincronizada\": true,\n  \"status\": \"SINCRONIZADA\",\n  \"nomeUsuarioOrigem\": \"João\",\n  \"emailUsuarioOrigem\": \"joao@email.com\",\n  \"cpfUsuarioOrigem\": \"12345678900\",\n  \"nomeUsuarioDestino\": \"João\",\n  \"emailUsuarioDestino\": \"joao@email.com\",\n  \"cpfUsuarioDestino\": \"12345678900\",\n  \"dataSincronizacaoOrigem\": \"2025-06-12T02:22:42.348952Z\",\n  \"dataSincronizacaoDestino\": \"2025-06-12T02:23:31.537132Z\"\n}"
+        }
+      ],
+      "_type": "request"
+    },
+    {
+      "_id": "req_transacoes_recebidas",
+      "parentId": "fld_transacoes_user",
+      "name": "Listar Transações Recebidas",
+      "method": "GET",
+      "url": "{{ base_url }}/transacoes/recebidas",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "authentication": { "type": "bearer", "token": "{{ bearer_token }}" },
+      "responses": [
+        {
+          "statusCode": 200,
+          "body": "[\n  {\n    \"id\": 2,\n    \"valor\": 2.0,\n    \"tipoOperacao\": \"SINCRONA\",\n    \"metodoConexao\": \"INTERNET\",\n    \"gatewayPagamento\": \"PAGARME\",\n    \"descricao\": \"Pagamento teste\",\n    \"dataCriacao\": \"2025-06-12T02:19:04.731125Z\",\n    \"dataAtualizacao\": \"2025-06-12T02:19:38.920045Z\",\n    \"sincronizada\": true,\n    \"status\": \"SINCRONIZADA\",\n    \"nomeUsuarioOrigem\": \"João\",\n    \"emailUsuarioOrigem\": \"joao@email.com\",\n    \"cpfUsuarioOrigem\": \"12345678900\",\n    \"nomeUsuarioDestino\": \"Maria\",\n    \"emailUsuarioDestino\": \"maria@email.com\",\n    \"cpfUsuarioDestino\": \"98765432100\",\n    \"dataSincronizacaoOrigem\": \"2025-06-12T02:19:04.731125Z\",\n    \"dataSincronizacaoDestino\": \"2025-06-12T02:19:38.920045Z\"\n  }\n]"
+        }
+      ],
+      "_type": "request"
+    },
+    {
+      "_id": "req_transacoes_enviadas",
+      "parentId": "fld_transacoes_user",
+      "name": "Listar Transações Enviadas",
+      "method": "GET",
+      "url": "{{ base_url }}/transacoes/enviadas",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "authentication": { "type": "bearer", "token": "{{ bearer_token }}" },
+      "responses": [
+        {
+          "statusCode": 200,
+          "body": "[\n  {\n    \"id\": 1,\n    \"valor\": 1.0,\n    \"tipoOperacao\": \"SINCRONA\",\n    \"metodoConexao\": \"INTERNET\",\n    \"gatewayPagamento\": \"PAGARME\",\n    \"descricao\": \"Pagamento teste\",\n    \"dataCriacao\": \"2025-06-12T02:13:11.449621Z\",\n    \"dataAtualizacao\": \"2025-06-12T02:14:02.428693Z\",\n    \"sincronizada\": true,\n    \"status\": \"SINCRONIZADA\",\n    \"nomeUsuarioOrigem\": \"João\",\n    \"emailUsuarioOrigem\": \"joao@email.com\",\n    \"cpfUsuarioOrigem\": \"12345678900\",\n    \"nomeUsuarioDestino\": \"Maria\",\n    \"emailUsuarioDestino\": \"maria@email.com\",\n    \"cpfUsuarioDestino\": \"98765432100\",\n    \"dataSincronizacaoOrigem\": \"2025-06-12T02:13:11.449621Z\",\n    \"dataSincronizacaoDestino\": \"2025-06-12T02:14:02.428693Z\"\n  }\n]"
+        }
+      ],
+      "_type": "request"
+    },
+    {
+      "_id": "req_transacoes_sincronizar_offline",
+      "parentId": "fld_transacoes_admin",
+      "name": "Sincronizar Transações Offline",
+      "method": "POST",
+      "url": "{{ base_url }}/transacoes/sincronizar-offline",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "authentication": { "type": "bearer", "token": "{{ bearer_token }}" },
+      "responses": [
+        {
+          "statusCode": 200,
+          "body": "{\n  \"message\": \"Transações sincronizadas com sucesso.\"\n}"
+        }
+      ],
+      "_type": "request"
+    },
+    {
+      "_id": "req_transacoes_status",
+      "parentId": "fld_transacoes_admin",
+      "name": "Consultar Status da Transação",
+      "method": "GET",
+      "url": "{{ base_url }}/transacoes/1/status",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "authentication": { "type": "bearer", "token": "{{ bearer_token }}" },
+      "responses": [
+        {
+          "statusCode": 200,
+          "body": "{\n  \"status\": \"SINCRONIZADA\"\n}"
+        }
+      ],
+      "_type": "request"
+    },
+    {
+      "_id": "req_transacoes_atualizar_status",
+      "parentId": "fld_transacoes_admin",
+      "name": "Atualizar Status da Transação",
+      "method": "PUT",
+      "url": "{{ base_url }}/transacoes/1/status?novoStatus=SINCRONIZADA",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "authentication": { "type": "bearer", "token": "{{ bearer_token }}" },
+      "responses": [
+        {
+          "statusCode": 200,
+          "body": "{\n  \"message\": \"Status atualizado com sucesso.\"\n}"
+        }
+      ],
       "_type": "request"
     },
     {
@@ -313,13 +451,30 @@
       "name": "Sincronizar Todas as Contas",
       "method": "POST",
       "url": "{{ base_url }}/sincronizacao/manual",
-      "headers": [
-        { "name": "Content-Type", "value": "application/json" }
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "authentication": { "type": "bearer", "token": "{{ bearer_token }}" },
+      "responses": [
+        {
+          "statusCode": 200,
+          "body": "{\n  \"message\": \"Sincronização manual concluída.\"\n}"
+        }
       ],
-      "authentication": {
-        "type": "bearer",
-        "token": "{{ bearer_token }}"
-      },
+      "_type": "request"
+    },
+    {
+      "_id": "req_sinc_me",
+      "parentId": "fld_sincronizacao",
+      "name": "Sincronizar Minha Conta",
+      "method": "POST",
+      "url": "{{ base_url }}/sincronizacao/me",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "authentication": { "type": "bearer", "token": "{{ bearer_token }}" },
+      "responses": [
+        {
+          "statusCode": 200,
+          "body": "{\n  \"message\": \"Conta sincronizada com sucesso.\"\n}"
+        }
+      ],
       "_type": "request"
     },
     {
@@ -328,13 +483,14 @@
       "name": "Sincronizar Conta por ID",
       "method": "POST",
       "url": "{{ base_url }}/sincronizacao/manual/1",
-      "headers": [
-        { "name": "Content-Type", "value": "application/json" }
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "authentication": { "type": "bearer", "token": "{{ bearer_token }}" },
+      "responses": [
+        {
+          "statusCode": 200,
+          "body": "{\n  \"message\": \"Conta sincronizada com sucesso.\"\n}"
+        }
       ],
-      "authentication": {
-        "type": "bearer",
-        "token": "{{ bearer_token }}"
-      },
       "_type": "request"
     }
   ]
