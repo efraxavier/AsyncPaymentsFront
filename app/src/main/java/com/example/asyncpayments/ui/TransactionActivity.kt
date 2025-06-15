@@ -21,6 +21,8 @@ import com.example.asyncpayments.utils.ShowNotification
 import com.example.asyncpayments.utils.TokenUtils
 import com.example.asyncpayments.utils.isOnline
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
@@ -266,7 +268,7 @@ class TransactionActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 val response = transactionService.sendTransaction(request)
-                // Exibe comprovante detalhado
+
                 val comprovante = """
                     Comprovante de Transação
                     -------------------------------
@@ -303,20 +305,38 @@ class TransactionActivity : AppCompatActivity() {
 
     private fun carregarUsuarios() {
         val userService = RetrofitClient.getInstance(this).create(UserService::class.java)
+        val prefs = getSharedPreferences("user_cache", MODE_PRIVATE)
+        val gson = Gson()
         lifecycleScope.launch {
             val isOnline = isOnline(this@TransactionActivity)
             usuarios = if (isOnline) {
                 try {
                     val listaUsuarios = userService.listarUsuarios()
                     Log.d("TransactionActivity", "Usuários carregados: $listaUsuarios")
+
+                    val json = gson.toJson(listaUsuarios)
+
                     listaUsuarios
                 } catch (e: Exception) {
                     Log.e("TransactionActivity", "Erro ao carregar usuários: ${e.message}")
-                    emptyList()
+
+                    val json = prefs.getString("usuarios", null)
+                    if (json != null) {
+                        val type = object : TypeToken<List<UserResponse>>() {}.type
+                        gson.fromJson<List<UserResponse>>(json, type)
+                    } else {
+                        emptyList()
+                    }
                 }
             } else {
-                Log.d("TransactionActivity", "Offline: lista de usuários vazia.")
-                emptyList()
+                Log.d("TransactionActivity", "Offline: carregando lista de usuários do cache.")
+                val json = prefs.getString("usuarios", null)
+                if (json != null) {
+                    val type = object : TypeToken<List<UserResponse>>() {}.type
+                    gson.fromJson<List<UserResponse>>(json, type)
+                } else {
+                    emptyList()
+                }
             }
 
             val userIdOrigem = TokenUtils.getUserIdFromToken(this@TransactionActivity)

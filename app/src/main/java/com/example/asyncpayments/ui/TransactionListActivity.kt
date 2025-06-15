@@ -37,10 +37,9 @@ class TransactionListActivity : AppCompatActivity() {
         }
 
         binding.btnSort.setOnClickListener {
-            
             transacoes = transacoes.sortedByDescending { it.dataCriacao }
-            val userId = TokenUtils.getUserIdFromToken(this)
-            adapter = TransactionAdapter(transacoes, tipoConta, userId)
+            val userEmail = TokenUtils.getEmailFromToken(this)
+            adapter = TransactionAdapter(transacoes, tipoConta, userEmail)
             binding.recyclerViewTransactions.adapter = adapter
         }
     }
@@ -48,9 +47,10 @@ class TransactionListActivity : AppCompatActivity() {
     private fun carregarTransacoes(tipoConta: String?) {
         lifecycleScope.launch {
             try {
+                val userEmail = TokenUtils.getEmailFromToken(this@TransactionListActivity)
                 val userId = TokenUtils.getUserIdFromToken(this@TransactionListActivity) ?: return@launch
                 val transacoes = carregarTransacoesUsuario(transactionService, userId, tipoConta)
-                adapter = TransactionAdapter(transacoes, tipoConta, userId)
+                adapter = TransactionAdapter(transacoes, tipoConta, userEmail)
                 binding.recyclerViewTransactions.layoutManager = LinearLayoutManager(this@TransactionListActivity)
                 binding.recyclerViewTransactions.adapter = adapter
             } catch (e: Exception) {

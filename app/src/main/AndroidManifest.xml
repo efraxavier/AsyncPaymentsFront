@@ -50,5 +50,6 @@
         <activity android:name=".ui.AddFundsActivity" /> 
         <activity android:name=".ui.ProfileActivity" /> 
         <activity android:name=".ui.TransactionListActivity" />
+        <activity android:name=".ui.TransactionDetailActivity" />
         </application>
 </manifest>

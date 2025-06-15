@@ -1,5 +1,7 @@
 package com.example.asyncpayments.model
 
+import java.io.Serializable
+
 data class TransactionResponse(
     val id: Long,
     val idUsuarioOrigem: Long,
@@ -22,4 +24,4 @@ data class TransactionResponse(
     val cpfUsuarioDestino: String, 
     val dataSincronizacaoOrigem: String?, 
     val dataSincronizacaoDestino: String? 
-)
+) : Serializable

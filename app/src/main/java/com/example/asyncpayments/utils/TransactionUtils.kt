@@ -41,5 +41,14 @@ suspend fun carregarTransacoesUsuario(
         dataCriacaoFim = null
     )
 
-    return (enviadas + recebidas + internas).distinctBy { it.id }
+    val sincronizacoes = transactionService.listarTransacoes(
+        tipoOperacao = "SINCRONIZACAO",
+        idUsuarioOrigem = userId,
+        idUsuarioDestino = userId,
+        status = null,
+        dataCriacaoInicio = null,
+        dataCriacaoFim = null
+    )
+
+    return (enviadas + recebidas + internas + sincronizacoes).distinctBy { it.id }
 }
