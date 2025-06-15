@@ -77,7 +77,14 @@ class TransactionAdapter(
             binding.tvTransactionMain.text = "${transaction.nomeUsuarioOrigem} → ${transaction.nomeUsuarioDestino}"
             binding.tvTransactionValue.text = "R$ %.2f".format(transaction.valor)
             binding.tvTransactionStatus.text = transaction.status
-            binding.tvTransactionDate.text = transaction.dataCriacao?.substring(0, 10) ?: "--"
+            binding.tvTransactionDate.text = transaction.dataCriacao?.let {
+                try {
+                    val dateTime = it.replace("Z", "").replace("T", " ")
+                    if (dateTime.length >= 16) dateTime.substring(0, 16) else dateTime
+                } catch (e: Exception) {
+                    it
+                }
+            } ?: "--"
 
             binding.root.setOnClickListener {
                 val context = binding.root.context

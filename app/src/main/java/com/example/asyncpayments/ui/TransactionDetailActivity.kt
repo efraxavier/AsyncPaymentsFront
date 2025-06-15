@@ -23,7 +23,14 @@ class TransactionDetailActivity : AppCompatActivity() {
             binding.tvDetailValor.text = "R$ %.2f".format(transaction.valor)
             binding.tvDetailStatus.text = transaction.status ?: "--"
             binding.tvDetailDescricao.text = transaction.descricao ?: "--"
-            binding.tvDetailDataCriacao.text = transaction.dataCriacao ?: "--"
+            binding.tvDetailDataCriacao.text = transaction.dataCriacao?.let {
+                try {
+                    val dateTime = it.replace("Z", "").replace("T", " ")
+                    if (dateTime.length >= 16) dateTime.substring(0, 16) else dateTime
+                } catch (e: Exception) {
+                    it
+                }
+            } ?: "--"
             binding.tvDetailDataAtualizacao.text = transaction.dataAtualizacao ?: "--"
             binding.tvDetailTipoOperacao.text = transaction.tipoOperacao ?: "--"
             binding.tvDetailMetodoConexao.text = transaction.metodoConexao ?: "--"

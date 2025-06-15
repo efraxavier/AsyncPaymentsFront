@@ -13,6 +13,8 @@ import com.example.asyncpayments.utils.ShowNotification
 import com.example.asyncpayments.utils.TokenUtils
 import com.example.asyncpayments.utils.carregarTransacoesUsuario
 import kotlinx.coroutines.launch
+import kotlin.math.ceil
+import kotlin.math.min
 
 class TransactionListActivity : AppCompatActivity() {
 
@@ -20,7 +22,11 @@ class TransactionListActivity : AppCompatActivity() {
     private var tipoConta: String? = null
     private var transacoes: List<TransactionResponse> = emptyList()
     private var adapter: TransactionAdapter? = null
-    private lateinit var transactionService: TransactionService 
+    private lateinit var transactionService: TransactionService
+
+    private var currentPage = 0
+    private val pageSize = 10
+    private var totalPages = 1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,11 +42,20 @@ class TransactionListActivity : AppCompatActivity() {
             finish()
         }
 
-        binding.btnSort.setOnClickListener {
-            transacoes = transacoes.sortedByDescending { it.dataCriacao }
-            val userEmail = TokenUtils.getEmailFromToken(this)
-            adapter = TransactionAdapter(transacoes, tipoConta, userEmail)
-            binding.recyclerViewTransactions.adapter = adapter
+        binding.recyclerViewTransactions.layoutManager = LinearLayoutManager(this)
+
+        // Paginação: botões próximo/anterior
+        binding.btnNextPage.setOnClickListener {
+            if (currentPage < totalPages - 1) {
+                currentPage++
+                exibirPagina()
+            }
+        }
+        binding.btnPrevPage.setOnClickListener {
+            if (currentPage > 0) {
+                currentPage--
+                exibirPagina()
+            }
         }
     }
 
@@ -49,10 +64,12 @@ class TransactionListActivity : AppCompatActivity() {
             try {
                 val userEmail = TokenUtils.getEmailFromToken(this@TransactionListActivity)
                 val userId = TokenUtils.getUserIdFromToken(this@TransactionListActivity) ?: return@launch
-                val transacoes = carregarTransacoesUsuario(transactionService, userId, tipoConta)
-                adapter = TransactionAdapter(transacoes, tipoConta, userEmail)
-                binding.recyclerViewTransactions.layoutManager = LinearLayoutManager(this@TransactionListActivity)
-                binding.recyclerViewTransactions.adapter = adapter
+                val todasTransacoes = carregarTransacoesUsuario(transactionService, userId, tipoConta)
+                    .filter { it.nomeUsuarioOrigem != null && it.nomeUsuarioDestino != null }
+                transacoes = todasTransacoes.sortedByDescending { it.dataCriacao }
+                totalPages = ceil(transacoes.size / pageSize.toDouble()).toInt().coerceAtLeast(1)
+                currentPage = 0
+                exibirPagina()
             } catch (e: Exception) {
                 Log.e("TransactionListActivity", "Erro ao carregar transações: ${e.message}")
                 ShowNotification.show(
@@ -63,5 +80,21 @@ class TransactionListActivity : AppCompatActivity() {
                 )
             }
         }
+    }
+
+    private fun exibirPagina() {
+        val userEmail = TokenUtils.getEmailFromToken(this)
+        val start = currentPage * pageSize
+        val end = min(start + pageSize, transacoes.size)
+        val pagina = if (start < end) transacoes.subList(start, end) else emptyList()
+        adapter = TransactionAdapter(pagina, tipoConta, userEmail)
+        binding.recyclerViewTransactions.adapter = adapter
+
+        // Atualiza texto de paginação
+        binding.tvPageInfo.text = "Página ${currentPage + 1} de $totalPages"
+
+        // Habilita/desabilita botões
+        binding.btnPrevPage.isEnabled = currentPage > 0
+        binding.btnNextPage.isEnabled = currentPage < totalPages - 1
     }
 }

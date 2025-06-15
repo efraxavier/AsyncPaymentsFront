@@ -16,21 +16,45 @@
             app:layout_constraintStart_toStartOf="parent"
             android:layout_margin="16dp"/>
 
-        <Button
-            android:id="@+id/btnSort"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Ordenar"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_margin="16dp"/>
-
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerViewTransactions"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             app:layout_constraintTop_toBottomOf="@id/btnBack"
-            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/paginationLayout"
             tools:listitem="@layout/item_transaction" />
+
+        <LinearLayout
+            android:id="@+id/paginationLayout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginBottom="16dp">
+
+            <Button
+                android:id="@+id/btnPrevPage"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Anterior" />
+
+            <TextView
+                android:id="@+id/tvPageInfo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Página 1 de 1"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:textAppearance="?attr/textAppearanceBody1" />
+
+            <Button
+                android:id="@+id/btnNextPage"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Próxima" />
+        </LinearLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>
