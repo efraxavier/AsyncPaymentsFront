@@ -9,6 +9,7 @@ import com.example.asyncpayments.databinding.ActivityLoginBinding
 import com.example.asyncpayments.model.AuthRequest
 import com.example.asyncpayments.network.AuthService
 import com.example.asyncpayments.network.RetrofitClient
+import com.example.asyncpayments.utils.OfflineModeManager
 import com.example.asyncpayments.utils.SharedPreferencesHelper
 import com.example.asyncpayments.utils.ShowNotification
 import kotlinx.coroutines.launch
@@ -60,6 +61,8 @@ class LoginActivity : AppCompatActivity() {
             try {
                 val response = authService.login(authRequest)
                 SharedPreferencesHelper(this@LoginActivity).saveToken(response.token)
+                // Sempre que logar, considere online
+                OfflineModeManager.isOffline = false
                 val parts = response.token.split(".")
                 if (parts.size > 1) {
                     val payload = String(Base64.decode(parts[1], Base64.DEFAULT))

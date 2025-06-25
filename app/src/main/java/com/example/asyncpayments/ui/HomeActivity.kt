@@ -2,29 +2,28 @@ package com.example.asyncpayments.ui
 
 import android.content.Intent
 import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
-import android.net.NetworkRequest
 import android.os.Bundle
-import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.asyncpayments.R
 import com.example.asyncpayments.databinding.ActivityHomeBinding
 import com.example.asyncpayments.domain.AccountManager
-import com.example.asyncpayments.domain.AccountSyncManager
 import com.example.asyncpayments.domain.ConnectionStatusMonitor
 import com.example.asyncpayments.domain.TransactionManager
 import com.example.asyncpayments.model.TransactionRequest
 import com.example.asyncpayments.network.RetrofitClient
-import com.example.asyncpayments.network.SyncService
 import com.example.asyncpayments.network.TransactionService
 import com.example.asyncpayments.network.UserService
-import com.example.asyncpayments.utils.NotificationQueue
+import com.example.asyncpayments.utils.AppLogger
+import com.example.asyncpayments.utils.OfflineModeManager
 import com.example.asyncpayments.utils.OfflineTransactionQueue
+import com.example.asyncpayments.utils.SessionCacheUtils
 import com.example.asyncpayments.utils.SharedPreferencesHelper
 import com.example.asyncpayments.utils.ShowNotification
 import com.example.asyncpayments.utils.TokenUtils
 import com.example.asyncpayments.utils.carregarTransacoesUsuario
+import com.example.asyncpayments.utils.isOnline
+import com.example.asyncpayments.utils.sincronizarSeNecessario
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import kotlinx.coroutines.launch
 import retrofit2.http.GET
@@ -32,13 +31,11 @@ import retrofit2.http.Query
 
 class HomeActivity : AppCompatActivity() {
     companion object {
-        
         private var primeiraSincronizacaoFeita = false
     }
 
     private lateinit var binding: ActivityHomeBinding
 
-    
     private var syncVisible = true
     private var asyncVisible = true
     private var syncBalanceValue: Double = 0.0
@@ -50,113 +47,90 @@ class HomeActivity : AppCompatActivity() {
     private var primeiraSincronizacao = true
 
     private lateinit var accountManager: AccountManager
-    private lateinit var syncManager: AccountSyncManager
     private lateinit var transactionManager: TransactionManager
     private lateinit var connectionMonitor: ConnectionStatusMonitor
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityHomeBinding.inflate(layoutInflater)
-        val token = SharedPreferencesHelper(this).getToken()
-        Log.d("HomeActivity", "Token atual: $token")
-        if (token != null) {
-            val parts = token.split(".")
-            if (parts.size > 1) {
-                val payload = String(android.util.Base64.decode(parts[1], android.util.Base64.DEFAULT))
-                Log.d("HomeActivity", "Payload do token: $payload")
-            }
-        }
-        val email = TokenUtils.getEmailFromToken(this)
-        val nomeUsuario = email?.substringBefore("@") ?: ""
-        binding.tvWelcome.text = "Bem-vindo $nomeUsuario"
         setContentView(binding.root)
-        setupBalanceClickListeners()
-        
-        val pendentes = NotificationQueue.getAndClearAll()
-        Log.d("HomeActivity", "Notificacoes pendentes para exibir: $pendentes")
-        pendentes.forEach { transacao ->
-            val descricao = if (!transacao.descricao.isNullOrBlank()) "\nDescrição: ${transacao.descricao}" else ""
-            val mensagem = "Método: ${transacao.metodoConexao}\n" +
-                           "Recebido de ID: ${transacao.idUsuarioOrigem}\n" +
-                           "Valor: R$ %.2f".format(transacao.valor) +
-                           descricao
-            ShowNotification.show(
-                this,
-                ShowNotification.Type.TRANSACTION_RECEIVED,
-                transacao.valor,
-                mensagem
-            )
-        }
-
-        val bottomNav = findViewById<BottomNavigationView>(R.id.bottomNav)
-        bottomNav.menu.findItem(R.id.menu_home).isChecked = true
-        bottomNav.setOnItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.menu_home -> true
-                R.id.menu_add_funds -> {
-                    startActivity(Intent(this, AddFundsActivity::class.java))
-                    finish()
-                    true
-                }
-                R.id.menu_transactions -> {
-                    startActivity(Intent(this, TransactionActivity::class.java))
-                    finish()
-                    true
-                }
-                R.id.menu_profile -> {
-                    startActivity(Intent(this, ProfileActivity::class.java))
-                    finish()
-                    true
-                }
-                else -> false
-            }
-        }
-
-        
-        binding.btnToggleSyncBalance.setOnClickListener {
-            syncVisible = !syncVisible
-            updateSyncBalance()
-        }
-
-        
-        binding.btnToggleAsyncBalance.setOnClickListener {
-            asyncVisible = !asyncVisible
-            updateAsyncBalance()
-        }
-
-        
-        connectivityManager = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
-        networkCallback = object : ConnectivityManager.NetworkCallback() {
-            
-        }
-        val request = NetworkRequest.Builder()
-            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-            .build()
-        connectivityManager.registerNetworkCallback(request, networkCallback)
 
         val userService = RetrofitClient.getInstance(this).create(UserService::class.java)
-        val syncService = RetrofitClient.getInstance(this).create(SyncService::class.java)
         val transactionService = RetrofitClient.getInstance(this).create(TransactionService::class.java)
+        val offlineQueue = OfflineTransactionQueue
+
         accountManager = AccountManager(userService)
-        syncManager = AccountSyncManager(syncService)
-        transactionManager = TransactionManager(transactionService, OfflineTransactionQueue)
+        transactionManager = TransactionManager(transactionService, offlineQueue)
         connectionMonitor = ConnectionStatusMonitor(this) {
-            sincronizarTudo()
+            lifecycleScope.launch {
+                val userId = TokenUtils.getUserIdFromToken(this@HomeActivity) ?: return@launch
+                val transactionService = RetrofitClient.getInstance(this@HomeActivity).create(TransactionService::class.java)
+                sincronizarSeNecessario(transactionService, userId) {
+                    // Envie a transação de sincronização automática aqui
+                    val usuario = RetrofitClient.getInstance(this@HomeActivity).create(UserService::class.java).buscarMeuUsuario()
+                    val saldoAsync = usuario?.contaAssincrona?.saldo ?: 0.0
+                    if (saldoAsync > 0.0) {
+                        val syncRequest = TransactionRequest(
+                            idUsuarioOrigem = userId,
+                            idUsuarioDestino = userId,
+                            valor = saldoAsync,
+                            tipoOperacao = "SINCRONIZACAO",
+                            metodoConexao = "INTERNET",
+                            gatewayPagamento = "INTERNO",
+                            descricao = "Sincronização automática de saldo assíncrono"
+                        )
+                        transactionService.sendTransaction(syncRequest)
+                        AppLogger.log("API", "sendTransaction(SINCRONIZACAO) automática enviada")
+                    }
+                }
+            }
         }
         connectionMonitor.start()
 
-        
-        carregarSaldos()
+        lifecycleScope.launch {
+            val online = isOnline(this@HomeActivity)
+            if (!online) {
+                OfflineModeManager.isOffline = true
+                val cache = SessionCacheUtils.loadSessionCache(this@HomeActivity)
+                if (cache != null) {
+                    syncBalanceValue = cache.usuario?.contaSincrona?.saldo ?: 0.0
+                    asyncBalanceValue = cache.usuario?.contaAssincrona?.saldo ?: 0.0
+                    updateSyncBalance()
+                    updateAsyncBalance()
+                } else {
+                    ShowNotification.show(
+                        this@HomeActivity,
+                        ShowNotification.Type.GENERIC,
+                        0.0,
+                        "Sem dados offline disponíveis. Conecte-se à internet para atualizar o app."
+                    )
+                    binding.tvSyncBalance.text = "••••••••"
+                    binding.tvAsyncBalance.text = "••••••••"
+                }
+                setupBalanceClickListeners()
+                setupBottomNav()
+                return@launch
+            } else {
+                OfflineModeManager.isOffline = false
+            }
 
-        binding.btnSyncAccounts.setOnClickListener {
-            sincronizarContas()
+            carregarDadosUsuario()
+            carregarSaldos()
+            setupBalanceClickListeners()
+            setupBottomNav()
         }
+
+        setupSyncButton() // Certifique-se de chamar o setup do botão
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        connectivityManager.unregisterNetworkCallback(networkCallback)
-        connectionMonitor.stop()
+        if (this::connectivityManager.isInitialized) {
+            connectivityManager.unregisterNetworkCallback(networkCallback)
+        }
+        if (this::connectionMonitor.isInitialized) {
+            connectionMonitor.stop()
+        }
     }
 
     private fun updateSyncBalance() {
@@ -187,9 +161,10 @@ class HomeActivity : AppCompatActivity() {
                 asyncBalanceValue = async
                 updateSyncBalance()
                 updateAsyncBalance()
+                AppLogger.log("API", "carregarSaldos OK")
             },
             onError = { msg ->
-                Log.e("HomeActivity", "Erro ao carregar saldos: $msg")
+                AppLogger.log("API", "carregarSaldos ERROR: $msg")
                 ShowNotification.show(
                     this@HomeActivity,
                     ShowNotification.Type.GENERIC,
@@ -209,25 +184,120 @@ class HomeActivity : AppCompatActivity() {
         )
     }
 
+    private fun setupSyncButton() {
+        binding.btnSyncAccounts.setOnClickListener {
+            sincronizarContas()
+        }
+    }
+
+    private suspend fun existeSincronizacaoPendente(transactionService: TransactionService, userId: Long): Boolean {
+        return try {
+            val transacoes = transactionService.listarTransacoes(
+                tipoOperacao = "SINCRONIZACAO",
+                idUsuarioOrigem = userId,
+                idUsuarioDestino = userId
+            )
+            transacoes.any { 
+                it.tipoOperacao == "SINCRONIZACAO" && it.status == "PENDENTE"
+            }
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    private suspend fun aguardarSincronizacaoConcluida(transactionService: TransactionService, userId: Long): Boolean {
+        repeat(10) { // tenta por até 10 segundos
+            val transacoes = transactionService.listarTransacoes(
+                tipoOperacao = "SINCRONIZACAO",
+                idUsuarioOrigem = userId,
+                idUsuarioDestino = userId,
+                status = "PENDENTE"
+            )
+            val syncPendente = transacoes.find { it.tipoOperacao == "SINCRONIZACAO" && it.status == "PENDENTE" }
+            if (syncPendente == null) return true // Não há mais pendente, provavelmente já foi processada
+            kotlinx.coroutines.delay(1000)
+        }
+        return false // Timeout
+    }
+
     private fun sincronizarContas() {
-        val retrofit = RetrofitClient.getInstance(this)
+        val userService = RetrofitClient.getInstance(this).create(UserService::class.java)
+        val transactionService = RetrofitClient.getInstance(this).create(TransactionService::class.java)
+        val userId = TokenUtils.getUserIdFromToken(this) ?: return
+
         lifecycleScope.launch {
             try {
-                val response = retrofit.create(SyncService::class.java).sincronizarMinhaConta()
-                val message = response.string()
+                if (existeSincronizacaoPendente(transactionService, userId)) {
+                    ShowNotification.show(
+                        this@HomeActivity,
+                        ShowNotification.Type.GENERIC,
+                        0.0,
+                        "Já existe uma sincronização pendente. Aguarde o processamento."
+                    )
+                    return@launch
+                }
 
+                val usuario = userService.buscarMeuUsuario()
+                val saldoAsync = usuario?.contaAssincrona?.saldo ?: 0.0
+                if (saldoAsync <= 0.0) {
+                    ShowNotification.show(this@HomeActivity, ShowNotification.Type.GENERIC, 0.0, "Nada para sincronizar.")
+                    return@launch
+                }
+
+                val syncRequest = TransactionRequest(
+                    idUsuarioOrigem = userId,
+                    idUsuarioDestino = userId,
+                    valor = saldoAsync,
+                    tipoOperacao = "SINCRONIZACAO",
+                    metodoConexao = "INTERNET",
+                    gatewayPagamento = "INTERNO",
+                    descricao = "Sincronização de saldo assíncrono"
+                )
+
+                transactionService.sendTransaction(syncRequest)
+                AppLogger.log("API", "sendTransaction(SINCRONIZACAO) chamada realizada com sucesso")
                 ShowNotification.show(
                     this@HomeActivity,
-                    ShowNotification.Type.SYNC_SUCCESS,
+                    ShowNotification.Type.GENERIC,
                     0.0,
-                    message
+                    "Sincronização enviada. Aguarde o processamento..."
+                )
+
+                val concluida = aguardarSincronizacaoConcluida(transactionService, userId)
+                if (concluida) {
+                    carregarSaldosUsuario()
+                    AppLogger.log("API", "aguardarSincronizacaoConcluida OK")
+                    ShowNotification.show(
+                        this@HomeActivity,
+                        ShowNotification.Type.GENERIC,
+                        0.0,
+                        "Sincronização concluída e saldos atualizados."
+                    )
+                } else {
+                    AppLogger.log("API", "aguardarSincronizacaoConcluida TIMEOUT")
+                    ShowNotification.show(
+                        this@HomeActivity,
+                        ShowNotification.Type.GENERIC,
+                        0.0,
+                        "Sincronização enviada, mas ainda não processada. Atualize em instantes."
+                    )
+                }
+
+                // Só aqui: sincroniza fila offline
+                transactionManager.sincronizarTransacoesOffline(
+                    context = this@HomeActivity,
+                    scope = lifecycleScope,
+                    buscarIdUsuarioPorEmail = ::buscarIdUsuarioPorEmail,
+                    onResult = { sucesso, erro ->
+                        // Notifique o usuário se quiser
+                    }
                 )
             } catch (e: Exception) {
                 ShowNotification.show(
                     this@HomeActivity,
-                    ShowNotification.Type.SYNC_ERROR,
+                    ShowNotification.Type.GENERIC,
                     0.0,
-                    "Erro ao sincronizar contas: ${e.message}"
+                    "Erro ao sincronizar: ${e.message}"
                 )
             }
         }
@@ -246,7 +316,6 @@ class HomeActivity : AppCompatActivity() {
                     val novoSaldoSync = usuario.contaSincrona?.saldo ?: 0.0
                     val novoSaldoAsync = usuario.contaAssincrona?.saldo ?: 0.0
 
-                    
                     if (novoSaldoSync != syncBalanceValue) {
                         syncBalanceValue = novoSaldoSync
                         updateSyncBalance()
@@ -260,7 +329,7 @@ class HomeActivity : AppCompatActivity() {
                     binding.tvAsyncBalance.text = "••••••••"
                 }
             } catch (e: Exception) {
-                Log.e("HomeActivity", "Erro ao buscar dados do usuário: ${e.message}")
+                AppLogger.log("HomeActivity", "Erro ao buscar dados do usuário: ${e.message}")
                 ShowNotification.show(
                     this@HomeActivity,
                     ShowNotification.Type.GENERIC,
@@ -272,56 +341,21 @@ class HomeActivity : AppCompatActivity() {
     }
 
     private fun sincronizarTransacoesOffline() {
-        val queue = OfflineTransactionQueue.loadAll(this)
-        if (queue.isEmpty()) {
-            return
-        }
-        val transactionService = RetrofitClient.getInstance(this).create(TransactionService::class.java)
-        lifecycleScope.launch {
-            var sucesso = 0
-            var erro = 0
-            for (transacao in queue) {
-                try {
-                    val idUsuarioOrigem = buscarIdUsuarioPorEmail(transacao.origem)
-                    val idUsuarioDestino = buscarIdUsuarioPorEmail(transacao.destino)
-                    if (idUsuarioOrigem != null && idUsuarioDestino != null) {
-                        val tipoOperacao = if (transacao.metodoConexao == "INTERNET") "SINCRONA" else "ASSINCRONA"
-                        val request = TransactionRequest(
-                            idUsuarioOrigem = idUsuarioOrigem,
-                            idUsuarioDestino = idUsuarioDestino,
-                            valor = transacao.valor,
-                            tipoOperacao = tipoOperacao, 
-                            metodoConexao = transacao.metodoConexao,
-                            gatewayPagamento = transacao.gatewayPagamento,
-                            descricao = transacao.descricao
-                        )
-                        transactionService.sendTransaction(request)
-                        sucesso++
-                    } else {
-                        erro++
-                    }
-                } catch (e: Exception) {
-                    erro++
-                }
+        transactionManager.sincronizarTransacoesOffline(
+            context = this,
+            scope = lifecycleScope,
+            buscarIdUsuarioPorEmail = ::buscarIdUsuarioPorEmail,
+            onResult = { sucesso, erro ->
+                // Opcional: notifique o usuário sobre o resultado
             }
-            OfflineTransactionQueue.clear(this@HomeActivity)
-
-            ShowNotification.show(
-                this@HomeActivity,
-                ShowNotification.Type.SYNC_SUCCESS,
-                0.0,
-                "Transações sincronizadas: $sucesso sucesso(s), $erro erro(s)."
-            )
-        }
+        )
     }
 
-    
     interface UserIdService {
         @GET("/auth/user/id")
         suspend fun getIdByEmail(@Query("email") email: String): Long
     }
 
-    
     private suspend fun buscarIdUsuarioPorEmail(email: String): Long? {
         return try {
             val service = RetrofitClient.getInstance(this).create(UserIdService::class.java)
@@ -333,21 +367,24 @@ class HomeActivity : AppCompatActivity() {
 
     private fun carregarDadosUsuario() {
         val userService = RetrofitClient.getInstance(this).create(UserService::class.java)
+        val transactionService = RetrofitClient.getInstance(this).create(TransactionService::class.java)
+        val userId = TokenUtils.getUserIdFromToken(this) ?: return
 
         lifecycleScope.launch {
             try {
                 val usuario = userService.buscarMeuUsuario()
-                if (usuario != null) {
-                    syncBalanceValue = usuario.contaSincrona?.saldo ?: 0.0
-                    asyncBalanceValue = usuario.contaAssincrona?.saldo ?: 0.0
-                    updateSyncBalance()
-                    updateAsyncBalance()
-                } else {
-                    binding.tvSyncBalance.text = "••••••••"
-                    binding.tvAsyncBalance.text = "••••••••"
-                }
+                val transacoesSync = carregarTransacoesUsuario(transactionService, userId, "SINCRONA")
+                val transacoesAsync = carregarTransacoesUsuario(transactionService, userId, "ASSINCRONA")
+                SessionCacheUtils.saveSessionCache(this@HomeActivity, usuario, transacoesSync, transacoesAsync)
+                val listaUsuarios = userService.listarUsuarios()
+                val prefs = getSharedPreferences("user_cache", MODE_PRIVATE)
+                val gson = com.google.gson.Gson()
+                prefs.edit().putString("usuarios", gson.toJson(listaUsuarios)).apply()
+                syncBalanceValue = usuario?.contaSincrona?.saldo ?: 0.0
+                asyncBalanceValue = usuario?.contaAssincrona?.saldo ?: 0.0
+                updateSyncBalance()
+                updateAsyncBalance()
             } catch (e: Exception) {
-                Log.e("HomeActivity", "Erro ao buscar dados do usuário: ${e.message}")
                 ShowNotification.show(
                     this@HomeActivity,
                     ShowNotification.Type.GENERIC,
@@ -364,53 +401,6 @@ class HomeActivity : AppCompatActivity() {
         carregarTransacoes(tipoConta)
     }
 
-    private fun atualizarSaldoAssincrono() {
-        val retrofit = RetrofitClient.getInstance(this)
-        val syncService = retrofit.create(SyncService::class.java)
-        val userService = retrofit.create(UserService::class.java)
-        lifecycleScope.launch {
-            try {
-                
-                syncService.sincronizarMinhaConta()
-                
-                val usuario = userService.buscarMeuUsuario()
-                val saldo = usuario.contaAssincrona?.saldo ?: 0.0
-                
-                binding.tvAsyncBalance.text = "R$ %.2f".format(saldo)
-            } catch (e: Exception) {
-                
-            }
-        }
-    }
-
-    private fun setupSyncButton() {
-        binding.btnSyncAccounts.setOnClickListener {
-            syncManager.sincronizarMinhaConta(
-                lifecycleScope,
-                onSuccess = { ShowNotification.show(this, ShowNotification.Type.GENERIC, 0.0, "Conta sincronizada") },
-                onError = { msg -> ShowNotification.show(this, ShowNotification.Type.GENERIC, 0.0, msg) }
-            )
-        }
-    }
-
-    private fun setupAutoTransactionSync() {
-        this.connectionMonitor.onConnected = {
-            transactionManager.sincronizarTransacoesOffline(
-                context = this,
-                scope = lifecycleScope,
-                buscarIdUsuarioPorEmail = ::buscarIdUsuarioPorEmail,
-                onResult = { sucesso, erro ->
-                    ShowNotification.show(
-                        this,
-                        ShowNotification.Type.GENERIC,
-                        0.0,
-                        "Transações sincronizadas: $sucesso sucesso(s), $erro erro(s)."
-                    )
-                }
-            )
-        }
-    }
-
     private fun buscarStatusTransacao(id: Long) {
         val transactionService = RetrofitClient.getInstance(this).create(TransactionService::class.java)
         lifecycleScope.launch {
@@ -423,7 +413,7 @@ class HomeActivity : AppCompatActivity() {
                     "Status da transação $id: $status"
                 )
             } catch (e: Exception) {
-                Log.e("HomeActivity", "Erro ao buscar status da transação: ${e.message}")
+                AppLogger.log("HomeActivity", "Erro ao buscar status da transação: ${e.message}")
                 ShowNotification.show(
                     this@HomeActivity,
                     ShowNotification.Type.GENERIC,
@@ -456,10 +446,34 @@ class HomeActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 val transacoes = carregarTransacoesUsuario(transactionService, userId, tipoConta)
-                
-                Log.d("HomeActivity", "Transações carregadas: ${transacoes.size}")
+                AppLogger.log("HomeActivity", "Transações carregadas: ${transacoes.size}")
             } catch (e: Exception) {
-                
+            }
+        }
+    }
+
+    private fun setupBottomNav() {
+        val bottomNav = findViewById<BottomNavigationView>(R.id.bottomNav)
+        bottomNav.menu.findItem(R.id.menu_home).isChecked = true
+        bottomNav.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.menu_home -> true
+                R.id.menu_add_funds -> {
+                    startActivity(Intent(this, AddFundsActivity::class.java))
+                    finish()
+                    true
+                }
+                R.id.menu_transactions -> {
+                    startActivity(Intent(this, TransactionActivity::class.java))
+                    finish()
+                    true
+                }
+                R.id.menu_profile -> {
+                    startActivity(Intent(this, ProfileActivity::class.java))
+                    finish()
+                    true
+                }
+                else -> false
             }
         }
     }

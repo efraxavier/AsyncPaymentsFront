@@ -1,7 +1,11 @@
 package com.example.asyncpayments.utils
 
+import com.example.asyncpayments.model.TransactionRequest
 import com.example.asyncpayments.model.TransactionResponse
 import com.example.asyncpayments.network.TransactionService
+import java.time.Instant
+import java.time.OffsetDateTime
+import java.util.Date
 
 suspend fun carregarTransacoesUsuario(
     transactionService: TransactionService,
@@ -51,4 +55,36 @@ suspend fun carregarTransacoesUsuario(
     )
 
     return (enviadas + recebidas + internas + sincronizacoes).distinctBy { it.id }
+}
+
+suspend fun sincronizarSeNecessario(
+    transactionService: TransactionService,
+    userId: Long,
+    enviarSincronizacao: suspend () -> Unit
+) {
+    val sincronizacoes = transactionService.listarTransacoes(
+        tipoOperacao = "SINCRONIZACAO",
+        idUsuarioOrigem = userId,
+        idUsuarioDestino = userId,
+        status = "SINCRONIZADA"
+    )
+
+    val ultimaSincronizacao = sincronizacoes
+        .filter { it.status == "SINCRONIZADA" && it.dataCriacao != null }
+        .maxByOrNull {
+            OffsetDateTime.parse(it.dataCriacao).toInstant().toEpochMilli()
+        }
+
+    val agora = OffsetDateTime.now().toInstant().toEpochMilli()
+    val diffHoras = if (ultimaSincronizacao != null) {
+        val ultima = OffsetDateTime.parse(ultimaSincronizacao.dataCriacao).toInstant().toEpochMilli()
+        val diffMillis = agora - ultima
+        diffMillis / (1000L * 60L * 60L)
+    } else {
+        9999L // Nunca sincronizou, força sincronizar
+    }
+
+    if (diffHoras >= 72) {
+        enviarSincronizacao()
+    }
 }

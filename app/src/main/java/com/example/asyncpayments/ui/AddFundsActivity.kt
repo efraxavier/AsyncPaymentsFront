@@ -8,6 +8,7 @@ import com.example.asyncpayments.databinding.ActivityAddFundsBinding
 import com.example.asyncpayments.network.RetrofitClient
 import com.example.asyncpayments.network.TransactionService
 import com.example.asyncpayments.utils.SharedPreferencesHelper
+import com.example.asyncpayments.utils.AppLogger
 import com.example.asyncpayments.utils.ShowNotification
 import com.example.asyncpayments.utils.TokenUtils
 import kotlinx.coroutines.launch
@@ -65,6 +66,7 @@ class AddFundsActivity : AppCompatActivity() {
         val service = RetrofitClient.getInstance(this).create(TransactionService::class.java)
         lifecycleScope.launch {
             try {
+                AppLogger.log("AddFundsActivity", "Iniciando adição de fundos. userId=$userId, valor=$valor")
                 val request = TransactionRequest(
                     idUsuarioOrigem = userId,
                     idUsuarioDestino = userId,
@@ -84,7 +86,7 @@ class AddFundsActivity : AppCompatActivity() {
                     mensagem
                 )
             } catch (e: retrofit2.HttpException) {
-                Log.e("AddFundsActivity", "Erro ao adicionar fundos: ${e.response()?.errorBody()?.string()}", e)
+                AppLogger.log("AddFundsActivity", "Erro ao adicionar fundos: ${e.response()?.errorBody()?.string()}", e)
                 ShowNotification.show(
                     this@AddFundsActivity,
                     ShowNotification.Type.GENERIC,
@@ -92,7 +94,7 @@ class AddFundsActivity : AppCompatActivity() {
                     "Erro ao adicionar fundos: ${e.response()?.errorBody()?.string()}"
                 )
             } catch (e: Exception) {
-                Log.e("AddFundsActivity", "Erro ao adicionar fundos", e)
+                AppLogger.log("AddFundsActivity", "Erro ao adicionar fundos", e)
                 ShowNotification.show(
                     this@AddFundsActivity,
                     ShowNotification.Type.GENERIC,

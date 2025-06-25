@@ -2,6 +2,8 @@ package com.example.asyncpayments.utils
 
 import android.content.Context
 import android.util.Base64
+import com.example.asyncpayments.utils.AppLogger
+import android.util.Log
 import org.json.JSONObject
 
 object TokenUtils {
@@ -12,6 +14,7 @@ object TokenUtils {
             val json = JSONObject(String(payload))
             json.getLong("id")
         } catch (e: Exception) {
+            AppLogger.log("TokenUtils", "Token inválido ou expirado: ${e.message}", e)
             null
         }
     }
@@ -23,6 +26,7 @@ object TokenUtils {
             val json = JSONObject(String(payload))
             json.getString("sub")
         } catch (e: Exception) {
+            AppLogger.log("TokenUtils", "Token inválido ou expirado: ${e.message}", e)
             null
         }
     }

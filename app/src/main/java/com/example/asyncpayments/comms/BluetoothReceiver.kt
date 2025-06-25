@@ -3,6 +3,7 @@ package com.example.asyncpayments.comms
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothServerSocket
 import android.bluetooth.BluetoothSocket
+import com.example.asyncpayments.utils.AppLogger
 import android.util.Log
 import com.example.asyncpayments.model.PaymentData
 import java.io.IOException
@@ -22,17 +23,17 @@ class BluetoothReceiver {
             val inputStream = ObjectInputStream(socket?.inputStream)
             val data = inputStream.readObject() as? PaymentData
             data?.let { onDataReceived(it) }
-            Log.d("BluetoothReceiver", "PaymentData received via Bluetooth")
+            AppLogger.log("BluetoothReceiver", "PaymentData received via Bluetooth")
         } catch (e: IOException) {
-            Log.e("BluetoothReceiver", "Error receiving PaymentData: ${e.message}")
+            AppLogger.log("BluetoothReceiver", "Error receiving PaymentData: ${e.message}")
         } catch (e: ClassNotFoundException) {
-            Log.e("BluetoothReceiver", "Class not found: ${e.message}")
+            AppLogger.log("BluetoothReceiver", "Class not found: ${e.message}")
         } finally {
             try {
                 socket?.close()
                 serverSocket?.close()
             } catch (e: IOException) {
-                Log.e("BluetoothReceiver", "Error closing socket: ${e.message}")
+                AppLogger.log("BluetoothReceiver", "Error closing socket: ${e.message}")
             }
         }
     }

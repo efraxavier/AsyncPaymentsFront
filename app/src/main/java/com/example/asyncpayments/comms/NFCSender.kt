@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.nfc.NdefMessage
 import android.nfc.NdefRecord
+import com.example.asyncpayments.utils.AppLogger
 import android.nfc.NfcAdapter
 import android.nfc.Tag
 import android.nfc.tech.Ndef
@@ -61,7 +62,7 @@ class NFCSender(private val activity: Activity) {
                 ndef.close()
             }
         } catch (e: Exception) {
-            Log.e("NFCSender", "Error writing tag", e)
+            AppLogger.log("NFCSender", "Error writing tag", e)
         }
     }
 }

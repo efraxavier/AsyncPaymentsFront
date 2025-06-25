@@ -10,5 +10,6 @@ data class PaymentData(
     val data: String,
     val metodoConexao: String,
     val gatewayPagamento: String,
-    val descricao: String? = null
+    val descricao: String? = null,
+    val dataCriacao: Long
 ) : Serializable

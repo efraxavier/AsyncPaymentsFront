@@ -1,30 +1,37 @@
 package com.example.asyncpayments.ui
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
-import android.util.Base64
 import android.util.Log
 import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.asyncpayments.R
+import com.example.asyncpayments.comms.SMSSender
 import com.example.asyncpayments.databinding.ActivityTransactionBinding
+import com.example.asyncpayments.model.PaymentData
 import com.example.asyncpayments.model.TransactionRequest
 import com.example.asyncpayments.model.UserResponse
 import com.example.asyncpayments.network.RetrofitClient
 import com.example.asyncpayments.network.TransactionService
+import com.example.asyncpayments.utils.AppLogger
 import com.example.asyncpayments.network.UserService
-import com.example.asyncpayments.utils.SharedPreferencesHelper
+import com.example.asyncpayments.utils.OfflineModeManager
+import com.example.asyncpayments.utils.OfflineTransactionQueue
 import com.example.asyncpayments.utils.ShowNotification
 import com.example.asyncpayments.utils.TokenUtils
 import com.example.asyncpayments.utils.isOnline
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.launch
-import org.json.JSONObject
+import android.telephony.TelephonyManager
 
 class TransactionActivity : AppCompatActivity() {
 
@@ -53,7 +60,15 @@ class TransactionActivity : AppCompatActivity() {
 
     private lateinit var transactionService: TransactionService
 
+    companion object {
+        private const val REQUEST_SMS_PERMISSION = 1001
+    }
+
+    private var pendingPaymentData: PaymentData? = null
+    private var pendingPhoneNumber: String? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        AppLogger.log("TransactionActivity", "onCreate chamado")
         super.onCreate(savedInstanceState)
         binding = ActivityTransactionBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -117,6 +132,41 @@ class TransactionActivity : AppCompatActivity() {
         }
     }
 
+    override fun onStart() {
+        AppLogger.log("TransactionActivity", "onStart chamado")
+        super.onStart()
+    }
+
+    override fun onResume() {
+        AppLogger.log("TransactionActivity", "onResume chamado")
+        super.onResume()
+    }
+
+    override fun onPause() {
+        AppLogger.log("TransactionActivity", "onPause chamado")
+        super.onPause()
+    }
+
+    override fun onStop() {
+        AppLogger.log("TransactionActivity", "onStop chamado")
+        super.onStop()
+    }
+
+    override fun onDestroy() {
+        AppLogger.log("TransactionActivity", "onDestroy chamado")
+        super.onDestroy()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        AppLogger.log("TransactionActivity", "onSaveInstanceState chamado")
+        super.onSaveInstanceState(outState)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        AppLogger.log("TransactionActivity", "onRestoreInstanceState chamado")
+        super.onRestoreInstanceState(savedInstanceState)
+    }
+
     private fun setupStepUI() {
         binding.tilGenericInput.visibility = View.VISIBLE
         binding.etGenericInput.setText("")
@@ -135,7 +185,6 @@ class TransactionActivity : AppCompatActivity() {
         when (step) {
             0 -> {
                 val userList = usuarios?.map { "${it.email} (ID: ${it.id})" } ?: emptyList()
-                Log.d("TransactionActivity", "Configuração do dropdown: $userList")
                 val adapter = ArrayAdapter(this, R.layout.item_dropdown_orange, userList)
                 (binding.etGenericInput as? AutoCompleteTextView)?.setAdapter(adapter)
                 binding.etGenericInput.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_arrow_drop_down, 0)
@@ -146,6 +195,12 @@ class TransactionActivity : AppCompatActivity() {
                 binding.etGenericInput.setOnClickListener {
                     (binding.etGenericInput as? AutoCompleteTextView)?.showDropDown()
                 }
+                if (idUsuarioDestino != null) {
+                    val user = usuarios?.find { it.id == idUsuarioDestino }
+                    if (user != null) {
+                        binding.etGenericInput.setText("${user.email} (ID: ${user.id})", false)
+                    }
+                }
             }
             1 -> {
                 binding.etGenericInput.inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
@@ -153,6 +208,9 @@ class TransactionActivity : AppCompatActivity() {
                 binding.etGenericInput.isFocusableInTouchMode = true
                 binding.etGenericInput.isEnabled = true
                 binding.etGenericInput.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0)
+                if (valor != null) {
+                    binding.etGenericInput.setText(valor.toString())
+                }
             }
             2 -> {
                 val adapter = ArrayAdapter(this, R.layout.item_dropdown_orange, metodosConexao)
@@ -164,6 +222,15 @@ class TransactionActivity : AppCompatActivity() {
                 binding.etGenericInput.isEnabled = true
                 binding.etGenericInput.setOnClickListener {
                     (binding.etGenericInput as? AutoCompleteTextView)?.showDropDown()
+                }
+                if (!metodoConexao.isNullOrBlank()) {
+                    binding.etGenericInput.setText(metodoConexao, false)
+                }
+                val input = binding.etGenericInput.text.toString()
+                if (input == "SMS" || metodoConexao == "SMS") {
+                    if (ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
+                        ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.SEND_SMS), REQUEST_SMS_PERMISSION)
+                    }
                 }
             }
             3 -> {
@@ -178,6 +245,9 @@ class TransactionActivity : AppCompatActivity() {
                 binding.etGenericInput.setOnClickListener {
                     (binding.etGenericInput as? AutoCompleteTextView)?.showDropDown()
                 }
+                if (!gatewayPagamento.isNullOrBlank()) {
+                    binding.etGenericInput.setText(gatewayPagamento, false)
+                }
             }
             4 -> {
                 binding.etGenericInput.inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
@@ -185,6 +255,9 @@ class TransactionActivity : AppCompatActivity() {
                 binding.etGenericInput.isFocusableInTouchMode = true
                 binding.etGenericInput.isEnabled = true
                 binding.etGenericInput.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0)
+                if (descricao.isNotBlank()) {
+                    binding.etGenericInput.setText(descricao)
+                }
             }
         }
     }
@@ -220,9 +293,15 @@ class TransactionActivity : AppCompatActivity() {
                     }
                     return false
                 }
+                if (metodoConexao == "SMS") {
+                    if (ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
+                        ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.SEND_SMS), REQUEST_SMS_PERMISSION)
+                    }
+                }
             }
             3 -> {
                 gatewayPagamento = input
+                AppLogger.log("TransactionActivity", "Gateway selecionado: $gatewayPagamento")
                 val gateways = if (metodoConexao == "INTERNET") gatewaysInternet else gatewaysOffline
                 if (gatewayPagamento.isNullOrBlank() || gatewayPagamento !in gateways) {
                     if (!isFinishing && !isDestroyed) {
@@ -239,6 +318,7 @@ class TransactionActivity : AppCompatActivity() {
     }
 
     private fun showConfirmDialog() {
+        if (isFinishing || isDestroyed) return
         MaterialAlertDialogBuilder(this)
             .setTitle("Confirmar transação?")
             .setMessage(
@@ -254,96 +334,116 @@ class TransactionActivity : AppCompatActivity() {
     }
 
     private fun enviarTransacao() {
-        val tipoOperacao = if (metodoConexao == "INTERNET") "SINCRONA" else "ASSINCRONA"
-        val request = TransactionRequest(
-            idUsuarioOrigem = userIdOrigem!!,
-            idUsuarioDestino = idUsuarioDestino!!,
+        val origemEmail = TokenUtils.getEmailFromToken(this)
+        if (origemEmail.isNullOrBlank()) {
+            AppLogger.log("TransactionActivity", "Erro: origem do usuário está vazia ou nula!")
+            ShowNotification.show(this, ShowNotification.Type.GENERIC, 0.0, "Erro: usuário de origem não encontrado.")
+            return
+        }
+        val destinoEmail = usuarios?.find { it.id == idUsuarioDestino }?.email
+        if (destinoEmail.isNullOrBlank()) {
+            AppLogger.log("TransactionActivity", "Erro: destino do usuário está vazio ou nulo!")
+            ShowNotification.show(this, ShowNotification.Type.GENERIC, 0.0, "Erro: usuário de destino não encontrado.")
+            return
+        }
+        val paymentData = PaymentData(
+            id = System.currentTimeMillis(),
             valor = valor!!,
-            tipoOperacao = tipoOperacao,
+            origem = origemEmail,
+            destino = destinoEmail,
+            data = System.currentTimeMillis().toString(),
             metodoConexao = metodoConexao!!,
             gatewayPagamento = gatewayPagamento!!,
-            descricao = descricao
+            descricao = descricao,
+            dataCriacao = System.currentTimeMillis() // <-- Adicione aqui
         )
+        OfflineTransactionQueue.saveTransaction(this, paymentData)
+        AppLogger.log("TransactionActivity", "Transação registrada localmente: $paymentData")
 
-        lifecycleScope.launch {
-            try {
-                val response = transactionService.sendTransaction(request)
+        Toast.makeText(
+            applicationContext,
+            "Transação registrada localmente. Será enviada ao servidor assim que houver conexão.",
+            Toast.LENGTH_LONG
+        ).show()
 
-                val comprovante = """
-                    Comprovante de Transação
-                    -------------------------------
-                    ID: ${response.id}
-                    Valor: R$ %.2f
-                    Status: ${response.status}
-                    Método: ${response.metodoConexao}
-                    Gateway: ${response.gatewayPagamento}
-                    Tipo: ${response.tipoOperacao}
-                    Data: ${response.dataCriacao}
-                    Destinatário: ${response.nomeUsuarioDestino} (${response.emailUsuarioDestino})
-                    Descrição: ${response.descricao ?: "--"}
-                """.trimIndent().format(response.valor)
+        val intent = Intent(this, HomeActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+        startActivity(intent)
+        finish()
+    }
 
-                MaterialAlertDialogBuilder(this@TransactionActivity)
-                    .setTitle("Transação enviada com sucesso!")
-                    .setMessage(comprovante)
-                    .setPositiveButton("OK") { _, _ ->
-                        startActivity(Intent(this@TransactionActivity, HomeActivity::class.java))
-                        finish()
-                    }
-                    .setCancelable(false)
-                    .show()
-            } catch (e: Exception) {
-                ShowNotification.show(
-                    this@TransactionActivity,
-                    ShowNotification.Type.GENERIC,
-                    0.0,
-                    "Erro ao enviar transação: ${e.message}"
-                )
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        AppLogger.log("TransactionActivity", "onRequestPermissionsResult chamado. requestCode=$requestCode, permissions=${permissions.joinToString()}, grantResults=${grantResults.joinToString()}")
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQUEST_SMS_PERMISSION) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                AppLogger.log("TransactionActivity", "Permissão de SMS concedida no callback de permissão.")
+                val paymentData = pendingPaymentData
+                val phoneNumber = pendingPhoneNumber
+                if (paymentData != null && phoneNumber != null) {
+                    AppLogger.log("TransactionActivity", "Enviando SMS após permissão concedida. paymentData=$paymentData, phoneNumber=$phoneNumber")
+                    SMSSender(this).send(paymentData, phoneNumber)
+                }
+            } else {
+                AppLogger.log("TransactionActivity", "Permissão de SMS negada no callback de permissão.")
             }
+            pendingPaymentData = null
+            pendingPhoneNumber = null
+            AppLogger.log("TransactionActivity", "Limpeza de dados pendentes após callback de permissão.")
         }
     }
+
+    // Exemplo de uso de try/catch em corrotinas e callbacks assíncronos para capturar exceções silenciosas
 
     private fun carregarUsuarios() {
         val userService = RetrofitClient.getInstance(this).create(UserService::class.java)
         val prefs = getSharedPreferences("user_cache", MODE_PRIVATE)
         val gson = Gson()
         lifecycleScope.launch {
-            val isOnline = isOnline(this@TransactionActivity)
-            usuarios = if (isOnline) {
-                try {
-                    val listaUsuarios = userService.listarUsuarios()
-                    Log.d("TransactionActivity", "Usuários carregados: $listaUsuarios")
-
-                    val json = gson.toJson(listaUsuarios)
-
-                    listaUsuarios
-                } catch (e: Exception) {
-                    Log.e("TransactionActivity", "Erro ao carregar usuários: ${e.message}")
-
+            try {
+                val isOffline = OfflineModeManager.isOffline
+                usuarios = if (!isOffline) {
+                    try {
+                        val listaUsuarios = userService.listarUsuarios()
+                        prefs.edit().putString("usuarios", gson.toJson(listaUsuarios)).apply()
+                        listaUsuarios
+                    } catch (e: Exception) {
+                        val json = prefs.getString("usuarios", null)
+                        if (json != null) {
+                            val type = object : com.google.gson.reflect.TypeToken<List<UserResponse>>() {}.type
+                            gson.fromJson<List<UserResponse>>(json, type)
+                        } else {
+                            emptyList()
+                        }
+                    }
+                } else {
                     val json = prefs.getString("usuarios", null)
                     if (json != null) {
-                        val type = object : TypeToken<List<UserResponse>>() {}.type
+                        val type = object : com.google.gson.reflect.TypeToken<List<UserResponse>>() {}.type
                         gson.fromJson<List<UserResponse>>(json, type)
                     } else {
                         emptyList()
                     }
                 }
-            } else {
-                Log.d("TransactionActivity", "Offline: carregando lista de usuários do cache.")
-                val json = prefs.getString("usuarios", null)
-                if (json != null) {
-                    val type = object : TypeToken<List<UserResponse>>() {}.type
-                    gson.fromJson<List<UserResponse>>(json, type)
-                } else {
-                    emptyList()
+
+                val userIdOrigem = TokenUtils.getUserIdFromToken(this@TransactionActivity)
+                usuarios = usuarios?.filter { it.id != userIdOrigem }
+
+                if (usuarios.isNullOrEmpty()) {
+                    if (!isFinishing && !isDestroyed) {
+                        ShowNotification.show(
+                            this@TransactionActivity,
+                            ShowNotification.Type.GENERIC,
+                            0.0,
+                            "Nenhum usuário disponível offline. Conecte-se à internet para atualizar a lista."
+                        )
+                    }
                 }
+
+                if (step == 0) setupStepUI()
+            } catch (e: Exception) {
+                AppLogger.log("TransactionActivity", "Erro em carregarUsuarios: ${e.message}", e)
             }
-
-            val userIdOrigem = TokenUtils.getUserIdFromToken(this@TransactionActivity)
-            usuarios = usuarios?.filter { it.id != userIdOrigem }
-            Log.d("TransactionActivity", "Usuários filtrados: $usuarios")
-
-            if (step == 0) setupStepUI()
         }
     }
 }

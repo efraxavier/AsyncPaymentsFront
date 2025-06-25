@@ -1,9 +1,11 @@
 package com.example.asyncpayments.domain
 
 import android.content.Context
+import android.util.Log
 import com.example.asyncpayments.model.PaymentData
 import com.example.asyncpayments.model.TransactionRequest
 import com.example.asyncpayments.network.TransactionService
+import com.example.asyncpayments.utils.AppLogger
 import com.example.asyncpayments.utils.OfflineTransactionQueue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -20,6 +22,7 @@ class TransactionManager(
     ) {
         val queue: List<PaymentData> = offlineQueue.loadAll(context)
         if (queue.isEmpty()) {
+            AppLogger.log("TransactionManager", "Nenhuma transação offline para sincronizar.")
             onResult(0, 0)
             return
         }
@@ -42,15 +45,18 @@ class TransactionManager(
                             descricao = transacao.descricao
                         )
                         transactionService.sendTransaction(request)
+                        AppLogger.log("TransactionManager", "Transação sincronizada com sucesso: $request")
                         sucesso++
                     } else {
                         erro++
                     }
                 } catch (e: Exception) {
+                    AppLogger.log("TransactionManager", "Erro ao sincronizar transação: $transacao", e)
                     erro++
                 }
             }
             offlineQueue.clear(context)
+            AppLogger.log("TransactionManager", "Sincronização concluída. Sucesso: $sucesso, Erro: $erro")
             onResult(sucesso, erro)
         }
     }

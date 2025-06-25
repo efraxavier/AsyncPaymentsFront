@@ -1,8 +1,8 @@
 package com.example.asyncpayments.ui
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.util.Base64
 import android.util.Log
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -10,62 +10,69 @@ import androidx.lifecycle.lifecycleScope
 import com.example.asyncpayments.R
 import com.example.asyncpayments.databinding.ActivityProfileBinding
 import com.example.asyncpayments.databinding.DialogResponseBinding
+import com.example.asyncpayments.model.UserResponse
 import com.example.asyncpayments.network.RetrofitClient
 import com.example.asyncpayments.network.UserService
+import com.example.asyncpayments.utils.OfflineModeManager
 import com.example.asyncpayments.utils.SharedPreferencesHelper
+import com.example.asyncpayments.utils.AppLogger
 import com.example.asyncpayments.utils.ShowNotification
+import com.example.asyncpayments.utils.SessionCacheUtils
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import kotlinx.coroutines.launch
-import org.json.JSONObject
-import java.time.Duration
-import java.time.Instant
-import java.time.LocalDateTime
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 
 class ProfileActivity : AppCompatActivity() {
     private lateinit var binding: ActivityProfileBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        AppLogger.log("ProfileActivity", "onCreate chamado")
         binding = ActivityProfileBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         val bottomNav = findViewById<BottomNavigationView>(R.id.bottomNav)
-        bottomNav.menu.findItem(com.example.asyncpayments.R.id.menu_profile).isChecked = true
+        bottomNav.menu.findItem(R.id.menu_profile).isChecked = true
         bottomNav.setOnItemSelectedListener { item ->
+            AppLogger.log("ProfileActivity", "BottomNav item selecionado: ${item.itemId}")
             when (item.itemId) {
-                com.example.asyncpayments.R.id.menu_home -> {
+                R.id.menu_home -> {
+                    AppLogger.log("ProfileActivity", "Navegando para HomeActivity")
                     startActivity(Intent(this, HomeActivity::class.java))
                     finish()
                     true
                 }
-                com.example.asyncpayments.R.id.menu_add_funds -> {
+                R.id.menu_add_funds -> {
+                    AppLogger.log("ProfileActivity", "Navegando para AddFundsActivity")
                     startActivity(Intent(this, AddFundsActivity::class.java))
                     finish()
                     true
                 }
-                com.example.asyncpayments.R.id.menu_transactions -> {
+                R.id.menu_transactions -> {
+                    AppLogger.log("ProfileActivity", "Navegando para TransactionActivity")
                     startActivity(Intent(this, TransactionActivity::class.java))
                     finish()
                     true
                 }
-                com.example.asyncpayments.R.id.menu_profile -> true
+                R.id.menu_profile -> {
+                    AppLogger.log("ProfileActivity", "Já está em ProfileActivity")
+                    true
+                }
                 else -> false
             }
         }
 
+        AppLogger.log("ProfileActivity", "Chamando carregarPerfil()")
         carregarPerfil()
 
         binding.btnLogout.setOnClickListener {
+            AppLogger.log("ProfileActivity", "Logout clicado")
             val dialogBinding = DialogResponseBinding.inflate(layoutInflater)
             dialogBinding.tvDialogTitle.text = "Sair"
             dialogBinding.tvDialogMessage.text = "Tem certeza que deseja sair?"
             dialogBinding.btnDialogOk.text = "Sim"
             dialogBinding.btnDialogOk.setOnClickListener {
-                
                 SharedPreferencesHelper(this).clearToken()
-                Log.d("ProfileActivity", "Token limpo no logout")
+                AppLogger.log("ProfileActivity", "Token limpo no logout")
                 val intent = Intent(this, LoginActivity::class.java)
                 intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                 startActivity(intent)
@@ -76,105 +83,77 @@ class ProfileActivity : AppCompatActivity() {
                 .setCancelable(true)
                 .create()
             dialog.show()
-            
         }
     }
 
     private fun carregarPerfil() {
+        AppLogger.log("ProfileActivity", "carregarPerfil chamado. OfflineModeManager.isOffline = ${OfflineModeManager.isOffline}")
+        if (OfflineModeManager.isOffline) {
+            exibirPerfilDoCache()
+            return
+        }
         val userService = RetrofitClient.getInstance(this).create(UserService::class.java)
         lifecycleScope.launch {
             try {
-                val usuario = userService.buscarMeuUsuario() 
+                AppLogger.log("ProfileActivity", "Buscando usuário online via API")
+                val usuario = userService.buscarMeuUsuario()
+                AppLogger.log("ProfileActivity", "Usuário online carregado: $usuario")
                 if (usuario != null) {
-                    binding.tvProfileEmail.text = "Email: ${usuario.email}"
-                    binding.tvProfileName.text = "Nome: ${usuario.nome} ${usuario.sobrenome}"
-                    binding.tvProfileCpf.text = "CPF: ${usuario.cpf}"
-                    binding.tvProfileCelular.text = "Celular: ${usuario.celular}"
-                    binding.tvProfileRole.text = "Perfil: ${usuario.role}"
-
-                    val bloqueada = usuario.contaAssincrona?.bloqueada ?: false
-                    val status = if (bloqueada) "Bloqueada" else "Ativa"
-                    binding.tvProfileStatus.text = "Status da conta: $status"
-
-                    val syncDateUtcString = usuario.contaAssincrona?.ultimaSincronizacao
-                    if (!syncDateUtcString.isNullOrBlank()) {
-                        val syncInstant = Instant.parse(syncDateUtcString)
-                        val syncDateLocal = syncInstant.atZone(ZoneId.systemDefault()).toLocalDateTime()
-                        val lastSyncFormatted = syncDateLocal.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
-                        binding.tvProfileSyncDate.text = "Última sincronização: $lastSyncFormatted"
-                    } else {
-                        binding.tvProfileSyncDate.text = "Última sincronização: --"
-                    }
+                    preencherCamposPerfil(usuario)
                 } else {
-                    exibirErro()
+                    AppLogger.log("ProfileActivity", "Usuário online é nulo, exibindo cache")
+                    exibirPerfilDoCache()
                 }
             } catch (e: Exception) {
-                Log.e("ProfileActivity", "Erro ao carregar perfil: ${e.message}")
-                exibirErro()
+                AppLogger.log("ProfileActivity", "Erro ao carregar perfil online: ${e.message}, exibindo cache")
+                exibirPerfilDoCache()
             }
         }
     }
 
-    private fun getSyncStatusText(syncDateUtcString: String): Pair<String, Int> {
-        
-        val syncInstant = if (syncDateUtcString.endsWith("Z")) {
-            Instant.parse(syncDateUtcString)
+    private fun exibirPerfilDoCache() {
+        val cache = SessionCacheUtils.loadSessionCache(this)
+        AppLogger.log("ProfileActivity", "Cache carregado: $cache")
+        val usuario = cache?.usuario
+        AppLogger.log("ProfileActivity", "Usuário do cache: $usuario")
+        if (usuario != null) {
+            preencherCamposPerfil(usuario)
         } else {
-            LocalDateTime.parse(syncDateUtcString, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
-                .atZone(ZoneId.of("UTC")).toInstant()
+            exibirErro()
         }
-        val syncDateLocal = syncInstant.atZone(ZoneId.systemDefault()).toLocalDateTime()
-        val now = LocalDateTime.now()
-        val duration = Duration.between(syncDateLocal, now)
-        val hours = duration.toHours()
-        val minutes = duration.toMinutes() % 60
-        val days = duration.toDays()
-
-        val statusText = when {
-            hours >= 24 -> "Sincronizado há $days dias"
-            hours > 0 -> "Sincronizado há $hours horas"
-            minutes > 0 -> "Sincronizado há $minutes minutos"
-            else -> "Sincronizado agora"
-        }
-
-        val color = when {
-            hours >= 72 -> R.color.red_accent 
-            hours >= 60 -> R.color.yellow_accent 
-            else -> R.color.green_active 
-        }
-
-        return Pair(statusText, color)
     }
 
-    private fun exibirDadosFake() {
-        binding.tvProfileEmail.text = "Email: joao.silva@example.com"
-        binding.tvProfileName.text = "Nome: João Silva"
-        binding.tvProfileCpf.text = "CPF: 000.000.000-00"
-        binding.tvProfileCelular.text = "Celular: (00) 00000-0000"
-        binding.tvProfileRole.text = "Perfil: USER"
-        binding.tvProfileStatus.text = "Status da conta: Ativa"
-        binding.tvProfileSync.text = "Última sincronização: --"
+    private fun preencherCamposPerfil(usuario: UserResponse) {
+        binding.tvProfileEmail.text = "Email: ${usuario.email}"
+        binding.tvProfileName.text = "Nome: ${usuario.nome} ${usuario.sobrenome}"
+        binding.tvProfileCpf.text = "CPF: ${usuario.cpf}"
+        binding.tvProfileCelular.text = "Celular: ${usuario.celular}"
+        binding.tvProfileRole.text = "Perfil: ${usuario.role}"
+
+        val bloqueada = usuario.contaAssincrona?.bloqueada ?: false
+        val status = if (bloqueada) "Bloqueada" else "Ativa"
+        binding.tvProfileStatus.text = "Status da conta: $status"
+
+        val syncDateUtcString = usuario.contaAssincrona?.ultimaSincronizacao
+        if (!syncDateUtcString.isNullOrBlank()) {
+            val syncInstant = java.time.Instant.parse(syncDateUtcString)
+            val syncDateLocal = syncInstant.atZone(java.time.ZoneId.systemDefault()).toLocalDateTime()
+            val lastSyncFormatted = syncDateLocal.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
+            binding.tvProfileSyncDate.text = "Última sincronização: $lastSyncFormatted"
+        } else {
+            binding.tvProfileSyncDate.text = "Última sincronização: --"
+        }
     }
 
     private fun exibirErro() {
-        binding.tvProfileEmail.text = "Erro ao carregar email"
-        binding.tvProfileName.text = "Erro ao carregar nome"
-        binding.tvProfileCpf.text = "Erro ao carregar CPF"
-        binding.tvProfileCelular.text = "Erro ao carregar celular"
-        binding.tvProfileRole.text = "Erro ao carregar perfil"
-        binding.tvProfileStatus.text = "Erro ao carregar status"
-        binding.tvProfileSyncDate.text = "Erro ao carregar sincronização"
-    }
-
-    private fun debugToken() {
-        val token = SharedPreferencesHelper(this).getToken()
-        Log.d("HomeActivity", "Token atual: $token")
-        if (token != null) {
-            val parts = token.split(".")
-            if (parts.size > 1) {
-                val payload = String(android.util.Base64.decode(parts[1], android.util.Base64.DEFAULT))
-                Log.d("HomeActivity", "Payload do token: $payload")
-            }
-        }
+        AppLogger.log("ProfileActivity", "exibirErro chamado")
+        binding.tvProfileEmail.text = ""
+        binding.tvProfileName.text = ""
+        binding.tvProfileCpf.text = ""
+        binding.tvProfileCelular.text = ""
+        binding.tvProfileRole.text = ""
+        binding.tvProfileStatus.text = ""
+        binding.tvProfileSyncDate.text = ""
+        // Opcional: você pode exibir uma mensagem de erro em algum campo ou Toast, se desejar
     }
 }

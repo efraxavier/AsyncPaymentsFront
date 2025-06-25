@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothSocket
 import android.util.Log
 import com.example.asyncpayments.model.PaymentData
 import com.example.asyncpayments.utils.CryptoUtils
+import com.example.asyncpayments.utils.AppLogger
 import java.io.ObjectOutputStream
 import java.util.UUID
 
@@ -20,9 +21,9 @@ class SecureBluetoothSender {
             val outputStream = ObjectOutputStream(socket.outputStream)
             outputStream.write(encryptedData)
             outputStream.flush()
-            Log.d("SecureBluetoothSender", "Encrypted PaymentData sent successfully via Bluetooth")
+            AppLogger.log("SecureBluetoothSender", "Encrypted PaymentData sent successfully via Bluetooth")
         } catch (e: Exception) {
-            Log.e("SecureBluetoothSender", "Error sending encrypted PaymentData: ${e.message}")
+            AppLogger.log("SecureBluetoothSender", "Error sending encrypted PaymentData: ${e.message}")
         } finally {
             socket?.close()
         }

@@ -1,6 +1,7 @@
 package com.example.asyncpayments.comms
 
 import android.content.Context
+import android.widget.Toast
 import com.example.asyncpayments.model.PaymentData
 import com.example.asyncpayments.utils.ShowNotification
 import kotlinx.coroutines.Dispatchers
@@ -36,18 +37,19 @@ class InternetReceiver {
                     data = System.currentTimeMillis().toString(),
                     metodoConexao = obj.optString("metodoConexao", "INTERNET"),
                     gatewayPagamento = obj.optString("gatewayPagamento", "INTERNO"),
-                    descricao = obj.getString("descricao") 
+                    descricao = obj.getString("descricao"),
+                    dataCriacao = System.currentTimeMillis()
                 )
                 result.add(paymentData)
             }
 
             for (paymentData in result) {
-                ShowNotification.show(
-                    context,
-                    ShowNotification.Type.TRANSACTION_RECEIVED,
-                    paymentData.valor,
-                    paymentData.origem
-                )
+                // Use Toast para evitar leaks
+                Toast.makeText(
+                    context.applicationContext,
+                    "Transação enviada: R$ %.2f".format(paymentData.valor),
+                    Toast.LENGTH_LONG
+                ).show()
             }
             result
         }

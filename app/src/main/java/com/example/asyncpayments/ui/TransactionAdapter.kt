@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
+import com.example.asyncpayments.utils.AppLogger
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.core.content.ContextCompat
@@ -11,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.asyncpayments.R
 import com.example.asyncpayments.databinding.ItemTransactionBinding
 import com.example.asyncpayments.model.TransactionResponse
+import java.time.OffsetDateTime
 
 class TransactionAdapter(
     private val transactions: List<TransactionResponse>,
@@ -23,6 +25,15 @@ class TransactionAdapter(
 
     inner class TransactionViewHolder(private val binding: ItemTransactionBinding) :
         RecyclerView.ViewHolder(binding.root) {
+
+        fun bindEmpty() {
+            binding.tvTransactionMain.text = "Nenhuma transação encontrada"
+            binding.tvTransactionValue.text = ""
+            binding.tvTransactionStatus.text = ""
+            binding.tvTransactionDate.text = ""
+            binding.root.setBackgroundResource(0)
+        }
+
         fun bind(transaction: TransactionResponse, isExpanded: Boolean) {
             val isSaida = (userEmail != null && transaction.emailUsuarioOrigem == userEmail) ||
                           (userCpf != null && transaction.cpfUsuarioOrigem == userCpf)
@@ -86,6 +97,26 @@ class TransactionAdapter(
                 }
             } ?: "--"
 
+            val isOfflinePending = (transaction.status == "PENDENTE" && transaction.id == null)
+
+            if (isOfflinePending) {
+                binding.root.setBackgroundResource(R.drawable.bg_offline_pending)
+                binding.tvTransactionStatus.text = "PENDENTE (offline)"
+                val horas = calcularHorasRestantes(transaction.dataCriacao)
+                binding.tvTransactionDate.text = "Faltam $horas h para sincronizar"
+            } else {
+                binding.root.setBackgroundResource(0)
+                binding.tvTransactionStatus.text = transaction.status
+                binding.tvTransactionDate.text = transaction.dataCriacao?.let {
+                    try {
+                        val dateTime = it.replace("Z", "").replace("T", " ")
+                        if (dateTime.length >= 16) dateTime.substring(0, 16) else dateTime
+                    } catch (e: Exception) {
+                        it
+                    }
+                } ?: "--"
+            }
+
             binding.root.setOnClickListener {
                 val context = binding.root.context
                 val intent = android.content.Intent(context, TransactionDetailActivity::class.java)
@@ -93,7 +124,7 @@ class TransactionAdapter(
                 context.startActivity(intent)
             }
 
-            Log.d(
+            AppLogger.log(
                 "TransactionAdapter",
                 "userEmail=$userEmail, userCpf=$userCpf, emailOrigem=${transaction.emailUsuarioOrigem}, emailDestino=${transaction.emailUsuarioDestino}, cpfOrigem=${transaction.cpfUsuarioOrigem}, cpfDestino=${transaction.cpfUsuarioDestino}"
             )
@@ -114,9 +145,9 @@ class TransactionAdapter(
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         if (transactions.isEmpty()) {
             (holder as EmptyViewHolder).bind(tipoConta)
-        } else {
-            (holder as TransactionViewHolder).bind(transactions[position], expandedPositions.contains(position))
+            return
         }
+        (holder as TransactionViewHolder).bind(transactions[position], expandedPositions.contains(position))
     }
 
     override fun getItemCount(): Int = if (transactions.isEmpty()) 1 else transactions.size
@@ -143,5 +174,20 @@ fun getStatusColor(status: String?, context: Context): Int {
         "SINCRONIZADA" -> ContextCompat.getColor(context, R.color.green_active)
         "ROLLBACK", "ERRO" -> ContextCompat.getColor(context, R.color.red_accent)
         else -> ContextCompat.getColor(context, R.color.light_gray)
+    }
+}
+
+fun isOfflinePending(transaction: TransactionResponse): Boolean {
+    return transaction.status == "PENDENTE" && transaction.metodoConexao != "INTERNET"
+}
+
+private fun calcularHorasRestantes(dataCriacao: String): Long {
+    return try {
+        val criacao = OffsetDateTime.parse(dataCriacao).toInstant().toEpochMilli()
+        val agora = System.currentTimeMillis()
+        val diff = 72 * 60 * 60 * 1000L - (agora - criacao)
+        diff.coerceAtLeast(0) / (1000 * 60 * 60)
+    } catch (e: Exception) {
+        0
     }
 }

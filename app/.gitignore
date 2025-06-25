@@ -7,9 +7,9 @@ local.properties
 !.idea/codeStyles
 .DS_Store
 /build/
-/captures/
-/externalNativeBuild/
-/cxx/
+captures/
+externalNativeBuild/
+cxx/
 *.apk
 *.ap_
 *.dex
@@ -32,6 +32,8 @@ local.properties
 # OS
 Thumbs.db
 ehthumbs.db
+Desktop.ini
+__MACOSX/
 
 # Test/coverage
 *.ec
@@ -44,18 +46,37 @@ ehthumbs.db
 *.7z
 *.rar
 
-# Ignore generated docs and diagrams
-/docs/*.drawio.xml
+# Docs e diagramas gerados
+docs/*.drawio.xml
 
 # Android Studio Navigation Editor temp files
 .navigation/
 
-# Mac OS
-__MACOSX/
-
-# Windows thumbnail cache files
-Desktop.ini
-
 # Ignore generated binding and build folders
 build/
 generated/
+
+# Arquivos e pastas customizados do projeto
+context/
+referencias.tex
+
+# Arquivos temporários de LaTeX
+*.aux
+*.out
+*.toc
+*.lof
+*.lot
+*.gz
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.synctex.gz
+
+# Arquivos de backup do editor
+*~
+*.bak
+*.tmp
+
+# Arquivos de cache do Gradle
+.gradle/

@@ -10,6 +10,7 @@ import androidx.core.content.ContextCompat
 import com.example.asyncpayments.model.PaymentData
 import java.io.IOException
 import java.io.ObjectOutputStream
+import com.example.asyncpayments.utils.AppLogger
 import java.util.UUID
 
 class BluetoothSender(private val context: Context) {
@@ -21,7 +22,7 @@ class BluetoothSender(private val context: Context) {
                 Manifest.permission.BLUETOOTH_CONNECT
             ) != PackageManager.PERMISSION_GRANTED
         ) {
-            Log.e("BluetoothSender", "Bluetooth connect permission not granted")
+            AppLogger.log("BluetoothSender", "Bluetooth connect permission not granted")
             return
         }
         var socket: BluetoothSocket? = null
@@ -31,16 +32,16 @@ class BluetoothSender(private val context: Context) {
             val outputStream = ObjectOutputStream(socket.outputStream)
             outputStream.writeObject(data)
             outputStream.flush()
-            Log.d("BluetoothSender", "PaymentData sent successfully via Bluetooth")
+            AppLogger.log("BluetoothSender", "PaymentData sent successfully via Bluetooth")
         } catch (e: SecurityException) {
-            Log.e("BluetoothSender", "SecurityException sending Bluetooth: ${e.message}")
+            AppLogger.log("BluetoothSender", "SecurityException sending Bluetooth: ${e.message}")
         } catch (e: IOException) {
-            Log.e("BluetoothSender", "Error sending PaymentData via Bluetooth: ${e.message}")
+            AppLogger.log("BluetoothSender", "Error sending PaymentData via Bluetooth: ${e.message}")
         } finally {
             try {
                 socket?.close()
             } catch (e: IOException) {
-                Log.e("BluetoothSender", "Error closing socket: ${e.message}")
+                AppLogger.log("BluetoothSender", "Error closing socket: ${e.message}")
             }
         }
     }
