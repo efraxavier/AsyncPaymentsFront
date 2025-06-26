@@ -38,7 +38,8 @@ class InternetReceiver {
                     metodoConexao = obj.optString("metodoConexao", "INTERNET"),
                     gatewayPagamento = obj.optString("gatewayPagamento", "INTERNO"),
                     descricao = obj.getString("descricao"),
-                    dataCriacao = System.currentTimeMillis()
+                    dataCriacao = System.currentTimeMillis(),
+                    identificadorOffline = obj.optString("identificadorOffline", System.currentTimeMillis().toString()) // gambiarra: usa timestamp se não vier do backend
                 )
                 result.add(paymentData)
             }

@@ -4,7 +4,6 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
@@ -21,17 +20,17 @@ import com.example.asyncpayments.model.TransactionRequest
 import com.example.asyncpayments.model.UserResponse
 import com.example.asyncpayments.network.RetrofitClient
 import com.example.asyncpayments.network.TransactionService
-import com.example.asyncpayments.utils.AppLogger
 import com.example.asyncpayments.network.UserService
+import com.example.asyncpayments.utils.AppLogger
 import com.example.asyncpayments.utils.OfflineModeManager
 import com.example.asyncpayments.utils.OfflineTransactionQueue
+import com.example.asyncpayments.utils.SharedPreferencesHelper
 import com.example.asyncpayments.utils.ShowNotification
 import com.example.asyncpayments.utils.TokenUtils
-import com.example.asyncpayments.utils.isOnline
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.gson.Gson
 import kotlinx.coroutines.launch
-import android.telephony.TelephonyManager
+import java.util.UUID
 
 class TransactionActivity : AppCompatActivity() {
 
@@ -72,6 +71,10 @@ class TransactionActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityTransactionBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        // Inicialize o OfflineTransactionQueue
+        val db = com.example.asyncpayments.data.AppDatabase.getInstance(this)
+        com.example.asyncpayments.utils.OfflineTransactionQueue.init(db.offlineTransactionDao())
 
         transactionService = RetrofitClient.getInstance(this).create(TransactionService::class.java)
 
@@ -346,6 +349,8 @@ class TransactionActivity : AppCompatActivity() {
             ShowNotification.show(this, ShowNotification.Type.GENERIC, 0.0, "Erro: usuário de destino não encontrado.")
             return
         }
+
+        val identificadorOffline = UUID.randomUUID().toString()
         val paymentData = PaymentData(
             id = System.currentTimeMillis(),
             valor = valor!!,
@@ -355,21 +360,112 @@ class TransactionActivity : AppCompatActivity() {
             metodoConexao = metodoConexao!!,
             gatewayPagamento = gatewayPagamento!!,
             descricao = descricao,
-            dataCriacao = System.currentTimeMillis() // <-- Adicione aqui
+            dataCriacao = System.currentTimeMillis(),
+            identificadorOffline = identificadorOffline
         )
-        OfflineTransactionQueue.saveTransaction(this, paymentData)
-        AppLogger.log("TransactionActivity", "Transação registrada localmente: $paymentData")
+        AppLogger.log("TransactionActivity", "Geração de PaymentData para transação offline: $paymentData")
 
-        Toast.makeText(
-            applicationContext,
-            "Transação registrada localmente. Será enviada ao servidor assim que houver conexão.",
-            Toast.LENGTH_LONG
-        ).show()
+        if (metodoConexao == "INTERNET") {
+            lifecycleScope.launch {
+                try {
+                    val usuarioOrigem = usuarios?.find { it.id == userIdOrigem }
+                    val usuarioDestino = usuarios?.find { it.id == idUsuarioDestino }
 
-        val intent = Intent(this, HomeActivity::class.java)
-        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
-        startActivity(intent)
-        finish()
+                    val tipoOperacao = if (metodoConexao == "INTERNET") "SINCRONA" else "ASSINCRONA"
+
+                    val request = TransactionRequest(
+                        idUsuarioOrigem = userIdOrigem!!,
+                        idUsuarioDestino = idUsuarioDestino!!,
+                        valor = valor!!,
+                        tipoOperacao = tipoOperacao,
+                        metodoConexao = metodoConexao!!,
+                        gatewayPagamento = gatewayPagamento!!,
+                        descricao = descricao,
+                        nomeUsuarioOrigem = usuarioOrigem?.nome,
+                        emailUsuarioOrigem = usuarioOrigem?.email,
+                        cpfUsuarioOrigem = usuarioOrigem?.cpf,
+                        nomeUsuarioDestino = usuarioDestino?.nome,
+                        emailUsuarioDestino = usuarioDestino?.email,
+                        cpfUsuarioDestino = usuarioDestino?.cpf
+                    )
+                    AppLogger.log("TransactionActivity", "Enviando transação online: $request")
+                    val response = transactionService.sendTransaction(request)
+                    AppLogger.log("TransactionActivity", "Transação enviada pela internet: $response")
+                    Toast.makeText(
+                        applicationContext,
+                        "Transação enviada com sucesso pela internet!",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    startActivity(Intent(this@TransactionActivity, HomeActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+                    })
+                    finish()
+                } catch (e: Exception) {
+                    AppLogger.log("TransactionActivity", "Erro ao enviar transação online: ${e.message}", e)
+                    // Se falhar, salva offline
+                    val saldoAtual = SharedPreferencesHelper(this@TransactionActivity).getSaldoLocal() ?: 0.0
+
+                    OfflineTransactionQueue.saveTransaction(
+                        this@TransactionActivity,
+                        paymentData,
+                        userIdOrigem!!,        
+                        idUsuarioDestino!!,    
+                        saldoAtual             
+                    )
+                    AppLogger.log("TransactionActivity", "Transação salva offline após falha online: $paymentData")
+                    Toast.makeText(
+                        applicationContext,
+                        "Falha ao enviar online. Transação salva offline.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    startActivity(Intent(this@TransactionActivity, HomeActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+                    })
+                    finish()
+                }
+            }
+        } else {
+            val saldoAtual = SharedPreferencesHelper(this).getSaldoLocal() ?: 0.0
+
+            OfflineTransactionQueue.saveTransaction(
+                this,
+                paymentData,
+                userIdOrigem!!,
+                idUsuarioDestino!!,
+                saldoAtual
+            )
+            AppLogger.log("TransactionActivity", "Transação registrada localmente: $paymentData")
+
+            AppLogger.log("TransactionActivity", "Antes do envio de SMS: $paymentData")
+            if (metodoConexao == "SMS") {
+                if (ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED) {
+                    AppLogger.log("TransactionActivity", "Enviando SMS para outro emulador com dados: $paymentData")
+                    com.example.asyncpayments.comms.SMSSender(this).send(paymentData)
+                    AppLogger.log("TransactionActivity", "Depois do envio de SMS: $paymentData")
+                    Toast.makeText(this, "SMS enviado!", Toast.LENGTH_SHORT).show()
+                    // Aguarda 1 segundo antes de fechar (apenas para garantir emulador)
+                    binding.root.postDelayed({
+                        startActivity(Intent(this, HomeActivity::class.java).apply {
+                            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+                        })
+                        finish()
+                    }, 1000)
+                    return
+                } else {
+                    AppLogger.log("TransactionActivity", "Permissão de SMS não concedida no momento do envio.")
+                }
+            }
+
+            Toast.makeText(
+                applicationContext,
+                "Transação registrada localmente. Será enviada ao servidor assim que houver conexão.",
+                Toast.LENGTH_LONG
+            ).show()
+            startActivity(Intent(this, HomeActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+            })
+            finish()
+        }
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
@@ -393,7 +489,6 @@ class TransactionActivity : AppCompatActivity() {
         }
     }
 
-    // Exemplo de uso de try/catch em corrotinas e callbacks assíncronos para capturar exceções silenciosas
 
     private fun carregarUsuarios() {
         val userService = RetrofitClient.getInstance(this).create(UserService::class.java)

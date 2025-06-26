@@ -11,10 +11,13 @@ class AuthInterceptor(private val context: Context) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val token = SharedPreferencesHelper(context).getToken()
         AppLogger.log("AuthInterceptor", "Token usado na requisição: $token")
-        val requestBuilder = chain.request().newBuilder()
-        if (!token.isNullOrBlank()) {
-            requestBuilder.addHeader("Authorization", "Bearer $token")
+        val request = if (!token.isNullOrBlank()) {
+            chain.request().newBuilder()
+                .addHeader("Authorization", "Bearer $token")
+                .build()
+        } else {
+            chain.request()
         }
-        return chain.proceed(requestBuilder.build())
+        return chain.proceed(request)
     }
 }

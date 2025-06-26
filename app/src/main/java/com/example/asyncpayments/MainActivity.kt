@@ -5,12 +5,14 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.example.asyncpayments.data.AppDatabase
 import com.example.asyncpayments.databinding.ActivityLoginBinding
 import com.example.asyncpayments.model.AuthRequest
 import com.example.asyncpayments.network.AuthService
 import com.example.asyncpayments.network.RetrofitClient
 import com.example.asyncpayments.ui.RegisterActivity
 import com.example.asyncpayments.ui.TransactionActivity
+import com.example.asyncpayments.utils.OfflineTransactionQueue
 import com.example.asyncpayments.utils.SharedPreferencesHelper
 import kotlinx.coroutines.launch
 
@@ -22,6 +24,9 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        val db = AppDatabase.getInstance(this)
+        OfflineTransactionQueue.init(db.offlineTransactionDao())
 
         binding.btnLogin.setOnClickListener {
             val email = binding.etEmail.text.toString()

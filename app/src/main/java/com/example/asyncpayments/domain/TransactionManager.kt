@@ -1,7 +1,6 @@
 package com.example.asyncpayments.domain
 
 import android.content.Context
-import android.util.Log
 import com.example.asyncpayments.model.PaymentData
 import com.example.asyncpayments.model.TransactionRequest
 import com.example.asyncpayments.network.TransactionService
@@ -59,5 +58,25 @@ class TransactionManager(
             AppLogger.log("TransactionManager", "Sincronização concluída. Sucesso: $sucesso, Erro: $erro")
             onResult(sucesso, erro)
         }
+    }
+
+    fun criarTransacaoOffline(
+        idUsuarioOrigem: Long,
+        idUsuarioDestino: Long,
+        valor: Double,
+        tipoOperacao: String?,
+        metodoConexao: String,
+        gatewayPagamento: String,
+        descricao: String?
+    ): TransactionRequest {
+        return TransactionRequest(
+            idUsuarioOrigem = idUsuarioOrigem,
+            idUsuarioDestino = idUsuarioDestino,
+            valor = valor,
+            tipoOperacao = tipoOperacao,
+            metodoConexao = metodoConexao,
+            gatewayPagamento = gatewayPagamento,
+            descricao = descricao
+        )
     }
 }

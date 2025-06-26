@@ -32,7 +32,6 @@ object AppLogger {
         } else {
             android.util.Log.d(tag, message)
         }
-        // Tenta enviar os logs automaticamente
         sendLogsIfPossible()
     }
 

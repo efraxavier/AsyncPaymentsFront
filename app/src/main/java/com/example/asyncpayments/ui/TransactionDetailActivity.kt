@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.example.asyncpayments.databinding.ActivityTransactionDetailBinding
 import com.example.asyncpayments.model.TransactionResponse
+import com.example.asyncpayments.utils.AppLogger
 
 class TransactionDetailActivity : AppCompatActivity() {
 
@@ -15,6 +16,7 @@ class TransactionDetailActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         val transaction = intent.getSerializableExtra("transaction") as? TransactionResponse
+        AppLogger.log("TransactionDetailActivity", "Exibindo detalhes: $transaction")
 
         if (transaction != null) {
             binding.tvDetailId.text = transaction.id?.toString() ?: "--"

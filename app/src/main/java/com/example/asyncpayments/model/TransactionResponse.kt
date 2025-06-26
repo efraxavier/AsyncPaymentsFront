@@ -23,5 +23,6 @@ data class TransactionResponse(
     val emailUsuarioDestino: String, 
     val cpfUsuarioDestino: String, 
     val dataSincronizacaoOrigem: String?, 
-    val dataSincronizacaoDestino: String? 
+    val dataSincronizacaoDestino: String?,
+    val identificadorOffline: String?
 ) : Serializable

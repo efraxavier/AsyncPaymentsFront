@@ -15,7 +15,13 @@ class TransactionUseCase(
         return transactionService.sendTransaction(request)
     }
 
-    fun saveTransactionOffline(context: Context, paymentData: PaymentData) {
-        offlineTransactionQueue.saveTransaction(context, paymentData)
+    fun saveTransactionOffline(
+        context: Context,
+        paymentData: PaymentData,
+        usuarioOrigemId: Long,
+        usuarioDestinoId: Long,
+        saldoAtual: Double
+    ) {
+        offlineTransactionQueue.saveTransaction(context, paymentData, usuarioOrigemId, usuarioDestinoId, saldoAtual)
     }
 }

@@ -1,15 +1,18 @@
 package com.example.asyncpayments.ui
 
+import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.asyncpayments.R
+import com.example.asyncpayments.data.AppDatabase
 import com.example.asyncpayments.databinding.ActivityHomeBinding
 import com.example.asyncpayments.domain.AccountManager
 import com.example.asyncpayments.domain.ConnectionStatusMonitor
 import com.example.asyncpayments.domain.TransactionManager
+import com.example.asyncpayments.domain.TransactionSyncWorker
 import com.example.asyncpayments.model.TransactionRequest
 import com.example.asyncpayments.network.RetrofitClient
 import com.example.asyncpayments.network.TransactionService
@@ -52,8 +55,37 @@ class HomeActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Inicialize o OfflineTransactionQueue ANTES de qualquer uso
+        val db = AppDatabase.getInstance(this)
+        OfflineTransactionQueue.init(db.offlineTransactionDao())
+
         binding = ActivityHomeBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        // Agora pode chamar carregarSaldoLocal()
+        carregarSaldoLocal()
+
+        val syncWorker = TransactionSyncWorker(
+            db.offlineTransactionDao(),
+            RetrofitClient.getInstance(this).create(TransactionService::class.java),
+            TokenUtils.getUserIdFromToken(this) ?: 0L,
+            this
+        ) {
+            // Callback chamado após rollback
+            runOnUiThread {
+                carregarSaldoLocal() // Atualiza saldo local na tela
+                // Opcional: recarregue a lista de transações se estiver visível
+                // carregarTransacoes(tipoContaAtual)
+                ShowNotification.show(
+                    this,
+                    ShowNotification.Type.GENERIC,
+                    SharedPreferencesHelper(this).getSaldoLocal() ?: 0.0,
+                    "Transação revertida (rollback) e saldo ajustado!"
+                )
+            }
+        }
+        syncWorker.startPeriodicStatusSync(lifecycleScope)
 
         val userService = RetrofitClient.getInstance(this).create(UserService::class.java)
         val transactionService = RetrofitClient.getInstance(this).create(TransactionService::class.java)
@@ -158,21 +190,35 @@ class HomeActivity : AppCompatActivity() {
             lifecycleScope,
             onResult = { sync, async ->
                 syncBalanceValue = sync
-                asyncBalanceValue = async
+
+                val offlinePendentes = OfflineTransactionQueue.loadAll(this).isNotEmpty()
+                if (!offlinePendentes) {
+                    // Só atualiza saldo local pelo backend se NÃO houver pendentes
+                    asyncBalanceValue = async
+                    SharedPreferencesHelper(this).saveSaldoLocal(async)
+                } else {
+                    // Se houver pendentes, mantém saldo local
+                    asyncBalanceValue = SharedPreferencesHelper(this).getSaldoLocal() ?: async
+                }
+
                 updateSyncBalance()
                 updateAsyncBalance()
                 AppLogger.log("API", "carregarSaldos OK")
             },
-            onError = { msg ->
-                AppLogger.log("API", "carregarSaldos ERROR: $msg")
-                ShowNotification.show(
-                    this@HomeActivity,
-                    ShowNotification.Type.GENERIC,
-                    0.0,
-                    "Erro ao carregar saldos: $msg"
-                )
-            }
+            onError = { msg -> /* ... */ }
         )
+    }
+
+    /**
+     * Retorna o saldo assíncrono considerando o backend + transações offline pendentes (não rollback).
+     */
+    private fun calcularSaldoAssincronoComPendentes(context: Context, saldoBackend: Double): Double {
+        val pendentes = OfflineTransactionQueue.loadAll(context)
+            .filter { it.origem == TokenUtils.getUserIdFromToken(context).toString() && it.valor > 0 }
+        val rollbackados = pendentes.filter { /* status == "ROLLBACK" se você salvar isso no PaymentData */ false }
+        val valorPendentes = pendentes.sumOf { it.valor }
+        val valorRollback = rollbackados.sumOf { it.valor }
+        return saldoBackend - valorPendentes + valorRollback
     }
 
     private fun sincronizarTudo() {
@@ -206,7 +252,8 @@ class HomeActivity : AppCompatActivity() {
     }
 
     private suspend fun aguardarSincronizacaoConcluida(transactionService: TransactionService, userId: Long): Boolean {
-        repeat(10) { // tenta por até 10 segundos
+        repeat(10) // tenta por até 10 segundos
+        { 
             val transacoes = transactionService.listarTransacoes(
                 tipoOperacao = "SINCRONIZACAO",
                 idUsuarioOrigem = userId,
@@ -303,30 +350,20 @@ class HomeActivity : AppCompatActivity() {
         }
     }
 
+    // Ao carregar dados do backend, só sobrescreva o saldo local se NÃO houver transações offline pendentes:
     private fun carregarSaldosUsuario() {
-        val token = SharedPreferencesHelper(this).getToken() ?: return
-        val emailLogado = TokenUtils.getEmailFromToken(this) ?: return
-
         val userService = RetrofitClient.getInstance(this).create(UserService::class.java)
 
         lifecycleScope.launch {
             try {
                 val usuario = userService.buscarMeuUsuario()
-                if (usuario != null) {
-                    val novoSaldoSync = usuario.contaSincrona?.saldo ?: 0.0
-                    val novoSaldoAsync = usuario.contaAssincrona?.saldo ?: 0.0
+                val offlinePendentes = OfflineTransactionQueue.loadAll(this@HomeActivity).isNotEmpty()
+                val novoSaldoAsync = usuario?.contaAssincrona?.saldo ?: 0.0
 
-                    if (novoSaldoSync != syncBalanceValue) {
-                        syncBalanceValue = novoSaldoSync
-                        updateSyncBalance()
-                    }
-                    if (novoSaldoAsync != asyncBalanceValue) {
-                        asyncBalanceValue = novoSaldoAsync
-                        updateAsyncBalance()
-                    }
-                } else {
-                    binding.tvSyncBalance.text = "••••••••"
-                    binding.tvAsyncBalance.text = "••••••••"
+                if (!offlinePendentes) {
+                    SharedPreferencesHelper(this@HomeActivity).saveSaldoLocal(novoSaldoAsync)
+                    asyncBalanceValue = novoSaldoAsync
+                    updateAsyncBalance()
                 }
             } catch (e: Exception) {
                 AppLogger.log("HomeActivity", "Erro ao buscar dados do usuário: ${e.message}")
@@ -346,7 +383,9 @@ class HomeActivity : AppCompatActivity() {
             scope = lifecycleScope,
             buscarIdUsuarioPorEmail = ::buscarIdUsuarioPorEmail,
             onResult = { sucesso, erro ->
-                // Opcional: notifique o usuário sobre o resultado
+                lifecycleScope.launch {
+                    carregarSaldosUsuario() // Atualiza saldo local e UI após sincronização/rollback
+                }
             }
         )
     }
@@ -373,15 +412,18 @@ class HomeActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 val usuario = userService.buscarMeuUsuario()
-                val transacoesSync = carregarTransacoesUsuario(transactionService, userId, "SINCRONA")
-                val transacoesAsync = carregarTransacoesUsuario(transactionService, userId, "ASSINCRONA")
-                SessionCacheUtils.saveSessionCache(this@HomeActivity, usuario, transacoesSync, transacoesAsync)
-                val listaUsuarios = userService.listarUsuarios()
-                val prefs = getSharedPreferences("user_cache", MODE_PRIVATE)
-                val gson = com.google.gson.Gson()
-                prefs.edit().putString("usuarios", gson.toJson(listaUsuarios)).apply()
-                syncBalanceValue = usuario?.contaSincrona?.saldo ?: 0.0
-                asyncBalanceValue = usuario?.contaAssincrona?.saldo ?: 0.0
+                val offlinePendentes = OfflineTransactionQueue.loadAll(this@HomeActivity).isNotEmpty()
+                val novoSaldoAsync = usuario?.contaAssincrona?.saldo ?: 0.0
+
+                if (!offlinePendentes) {
+                    // Só sobrescreve o saldo local se NÃO houver pendentes
+                    SharedPreferencesHelper(this@HomeActivity).saveSaldoLocal(novoSaldoAsync)
+                    asyncBalanceValue = novoSaldoAsync
+                } else {
+                    // Se houver pendentes, mantém o saldo local já ajustado pelas transações offline
+                    asyncBalanceValue = SharedPreferencesHelper(this@HomeActivity).getSaldoLocal() ?: novoSaldoAsync
+                }
+
                 updateSyncBalance()
                 updateAsyncBalance()
             } catch (e: Exception) {
@@ -389,7 +431,7 @@ class HomeActivity : AppCompatActivity() {
                     this@HomeActivity,
                     ShowNotification.Type.GENERIC,
                     0.0,
-                    "Erro ao carregar dados do usuário: ${e.message}"
+                    "Erro ao buscar dados do usuário"
                 )
             }
         }
@@ -397,6 +439,7 @@ class HomeActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        carregarSaldoLocal() // <-- Adicione esta linha
         val tipoConta = intent.getStringExtra("tipoConta") ?: "SINCRONA"
         carregarTransacoes(tipoConta)
     }
@@ -474,6 +517,33 @@ class HomeActivity : AppCompatActivity() {
                     true
                 }
                 else -> false
+            }
+        }
+    }
+
+    private fun carregarSaldoLocal() {
+        val offlinePendentes = OfflineTransactionQueue.loadAll(this).isNotEmpty()
+        if (offlinePendentes) {
+            // Mostra saldo local se houver pendentes
+            val saldoLocal = SharedPreferencesHelper(this).getSaldoLocal() ?: 0.0
+            AppLogger.log("HomeActivity", "Saldo local carregado (offline pendente): $saldoLocal")
+            asyncBalanceValue = saldoLocal
+            updateAsyncBalance()
+        }
+    }
+
+    private fun carregarSaldosBackend() {
+        val userService = RetrofitClient.getInstance(this).create(UserService::class.java)
+        lifecycleScope.launch {
+            try {
+                val usuario = userService.buscarMeuUsuario()
+                val saldoSincrono = usuario?.contaSincrona?.saldo ?: 0.0
+                val saldoAssincrono = usuario?.contaAssincrona?.saldo ?: 0.0
+                AppLogger.log("HomeActivity", "Saldo backend carregado: sincrono=$saldoSincrono assincrono=$saldoAssincrono")
+                binding.tvSyncBalance.text = "R$ %.2f".format(saldoSincrono)
+                binding.tvAsyncBalance.text = "R$ %.2f".format(saldoAssincrono)
+            } catch (e: Exception) {
+                AppLogger.log("HomeActivity", "Erro ao carregar saldos do backend: ${e.message}")
             }
         }
     }
